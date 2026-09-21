@@ -6,6 +6,13 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.shinsak.travle.ui.components.InsetPanel
+import com.shinsak.travle.ui.theme.pressable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -111,13 +118,17 @@ fun ScanResultDialog(parsed: ParsedFlight, onApply: () -> Unit, onDismiss: () ->
         "항공권 총액" to parsed.totalPrice?.let { "${it.won()}원" },
         "판매처" to parsed.seller,
     )
+    var showRaw by remember { mutableStateOf(false) }
     Dialog(onDismissRequest = onDismiss) {
         NeuCard(radius = 26.dp, padding = PaddingValues(22.dp)) {
             Text("스크린샷 인식 결과", color = n.ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
             Text("맞으면 적용, 틀린 건 적용 후에 직접 고치면 됨", color = n.ink2, fontSize = 12.sp)
             Spacer(Modifier.height(14.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(7.dp),
+                modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
+            ) {
                 rows.forEach { (label, value) ->
                     Row(verticalAlignment = Alignment.Top) {
                         Text(label, color = n.ink2, fontSize = 12.5.sp, modifier = Modifier.width(76.dp).padding(top = 1.dp))
@@ -131,8 +142,19 @@ fun ScanResultDialog(parsed: ParsedFlight, onApply: () -> Unit, onDismiss: () ->
                         )
                     }
                 }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (showRaw) "원문 접기" else "인식된 원문 보기 (${parsed.rawLines.size}줄)",
+                    color = n.accent, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.pressable { showRaw = !showRaw }.padding(vertical = 4.dp),
+                )
+                if (showRaw) {
+                    InsetPanel(modifier = Modifier.fillMaxWidth(), radius = 14.dp, padding = PaddingValues(12.dp)) {
+                        Text(parsed.rawLines.joinToString("\n"), color = n.ink2, fontSize = 10.5.sp, lineHeight = 15.sp)
+                    }
+                }
             }
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 NeuButton("취소", onClick = onDismiss, modifier = Modifier.weight(1f), color = n.ink2)
                 AccentButton("적용", onClick = onApply, modifier = Modifier.weight(1f), height = 46.dp, radius = 17.dp)
