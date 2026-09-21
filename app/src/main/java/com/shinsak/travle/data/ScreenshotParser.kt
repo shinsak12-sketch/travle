@@ -47,8 +47,11 @@ object ScreenshotParser {
     private val PEOPLE = Regex("(?:여행객|승객|성인|인원)\\s*(\\d{1,2})\\s*명?")
     /** 오전/오후 표기. OCR이 "오 후", "오휴"로 읽는 경우 포함 */
     private const val AMPM = "(?:오\\s*[전후휴호]|[AaPp][Mm])"
-    /** 시간 토큰 하나. 시:분 구분자는 콜론이 아닌 아무 기호여도 되고, 숫자를 글자로 읽은 것도 허용 (뒤에서 보정) */
-    private val TIME_TOKEN = Regex("($AMPM)?\\s*(?<![0-9])([0-9OoQDlIgq]{1,2})\\s*[^0-9A-Za-z가-힣\\s]{0,2}\\s*([0-9OoQDlISBgq]{2})(?![0-9])(?:\\s*\\+\\s*(\\d))?")
+    /**
+     * 시간 토큰 하나. 시:분 구분자는 아무 기호, 숫자를 글자로 읽은 것도 허용.
+     * 굵은 "오후"가 숫자로 읽혀 시 앞에 붙는 경우("239:50", "2210:50")가 있어 시 자리는 최대 4자리로 받고 뒤에서 잘라 씀.
+     */
+    private val TIME_TOKEN = Regex("($AMPM)?\\s*(?<![0-9])([0-9OoQDlIgq]{1,4})\\s*[^0-9A-Za-z가-힣\\s]{0,2}\\s*([0-9OoQDlISBgq]{2})(?![0-9])(?:\\s*\\+\\s*(\\d))?")
     private val TIME_RANGE = Regex("((?:오전|오후)\\s*\\d{1,2}[:.;：∶]\\d{2})\\s*$DASH\\s*((?:오전|오후)\\s*\\d{1,2}[:.;：∶]\\d{2})")
     private val TIME_RANGE_24 = Regex("(\\d{1,2}[:.;：∶]\\d{2})\\s*$DASH\\s*(\\d{1,2}[:.;：∶]\\d{2})")
     private val DURATION = Regex("(?:(\\d{1,2})\\s*시간)?\\s*(?:(\\d{1,2})\\s*분)?")
@@ -225,6 +228,9 @@ object ScreenshotParser {
         }
     }.joinToString("")
 
+    /** "239:50", "2210:50", "L 6:00" — 오후가 숫자/L로 오인식된 흔적 */
+    private val JUNK_PM = Regex("(^|\\s)(2\\d{2,3}|[Ll])\\s*\\d{0,2}\\s*[:.;：∶]\\s*\\d{2}")
+
     private fun isPm(s: String) = Regex("오\\s*[후휴호]|[Pp][Mm]").containsMatchIn(s)
     private fun isAm(s: String) = Regex("오\\s*[전잔]|[Aa][Mm]").containsMatchIn(s)
 
@@ -233,10 +239,17 @@ object ScreenshotParser {
         val ms = TIME_TOKEN.findAll(row).toList()
         if (ms.isEmpty()) return null
         // 행 안에 오전/오후가 없으면 바로 위·아래 행에서 찾음 (OCR이 "오후"를 딴 행으로 보낼 때)
-        val rowPm = isPm(row) || (!isAm(row) && isPm(near))
+        // 그것도 없으면 마지막 근거: 굵은 "오후"가 "23"/"22"/"L"로 읽혀 시 앞에 붙는 패턴이면 오후로 봄
+        val junkPm = JUNK_PM.containsMatchIn(row)
+        val rowPm = isPm(row) || (!isAm(row) && isPm(near)) || (!isAm(row) && !isAm(near) && junkPm)
         val rowAm = isAm(row) || (!isPm(row) && isAm(near))
         val toks = ms.mapNotNull { m ->
-            var h = fixDigits(m.groupValues[2]).toIntOrNull() ?: return@mapNotNull null
+            val hourRaw = fixDigits(m.groupValues[2])
+            // 뒤에서부터: 두 자리가 유효하면 두 자리, 아니면 한 자리 (앞은 오후 오인식 잡음)
+            val maxH = if (m.groupValues[1].isNotEmpty() || rowPm || rowAm) 12 else 23
+            var h = hourRaw.takeLast(2).toIntOrNull()?.takeIf { it <= maxH && (hourRaw.length <= 2 || it >= 10) }
+                ?: hourRaw.takeLast(1).toIntOrNull()
+                ?: return@mapNotNull null
             val min = fixDigits(m.groupValues[3])
             if ((min.toIntOrNull() ?: 99) > 59) return@mapNotNull null
             val own = m.groupValues[1]

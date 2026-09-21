@@ -72,5 +72,6 @@ dependencies {
 
     // 온디바이스 한국어 OCR (모델 번들, 인터넷 불필요) — 스크린샷 인식용
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
