@@ -137,7 +137,8 @@ fun ScanResultDialog(parsed: ParsedFlight, onApply: () -> Unit, onDismiss: () ->
         "항공권 총액" to parsed.totalPrice?.let { "${it.won()}원" },
         "판매처" to parsed.seller,
     )
-    var showRaw by remember { mutableStateOf(false) }
+    var showRaw by remember { mutableStateOf(true) }
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
     Dialog(onDismissRequest = onDismiss) {
         NeuCard(radius = 26.dp, padding = PaddingValues(22.dp)) {
             Text("스크린샷 인식 결과", color = n.ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -169,8 +170,17 @@ fun ScanResultDialog(parsed: ParsedFlight, onApply: () -> Unit, onDismiss: () ->
                 )
                 if (showRaw) {
                     InsetPanel(modifier = Modifier.fillMaxWidth(), radius = 14.dp, padding = PaddingValues(12.dp)) {
-                        Text(parsed.rawLines.joinToString("\n"), color = n.ink2, fontSize = 10.5.sp, lineHeight = 15.sp)
+                        parsed.rawLines.forEachIndexed { i, l ->
+                            Text("${i + 1}. $l", color = n.ink2, fontSize = 10.5.sp, lineHeight = 15.sp)
+                        }
                     }
+                    Text(
+                        "원문 복사",
+                        color = n.accent, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier
+                            .pressable { clipboard.setText(androidx.compose.ui.text.AnnotatedString(parsed.rawLines.joinToString("\n"))) }
+                            .padding(vertical = 4.dp),
+                    )
                 }
             }
             Spacer(Modifier.height(16.dp))
