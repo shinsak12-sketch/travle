@@ -69,5 +69,8 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui-tooling-preview")
+
+    // 온디바이스 한국어 OCR (모델 번들, 인터넷 불필요) — 스크린샷 인식용
+    implementation("com.google.mlkit:text-recognition-korean:16.0.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

@@ -25,10 +25,13 @@ object Routes {
     const val HOME = "home"
     const val COMPARE = "compare"
     const val SETTINGS = "settings"
-    const val EDIT = "edit?tripId={tripId}"
+    const val EDIT = "edit?tripId={tripId}&scan={scan}"
     const val DETAIL = "detail/{tripId}"
 
-    fun edit(tripId: String? = null) = if (tripId == null) "edit" else "edit?tripId=$tripId"
+    fun edit(tripId: String? = null, scan: Boolean = false): String {
+        val base = if (tripId == null) "edit" else "edit?tripId=$tripId"
+        return if (scan) (if (tripId == null) "edit?scan=true" else "$base&scan=true") else base
+    }
     fun detail(tripId: String) = "detail/$tripId"
 }
 
@@ -67,6 +70,7 @@ fun TravleNavHost(repo: TripRepository) {
                 repo = repo,
                 onOpen = { nav.navigate(Routes.detail(it)) },
                 onAdd = { nav.navigate(Routes.edit()) },
+                onScan = { nav.navigate(Routes.edit(scan = true)) },
                 onTab = { nav.goTab(it) },
             )
         }
@@ -88,11 +92,16 @@ fun TravleNavHost(repo: TripRepository) {
                     nullable = true
                     defaultValue = null
                 },
+                navArgument("scan") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                },
             ),
         ) { entry ->
             EditScreen(
                 repo = repo,
                 tripId = entry.arguments?.getString("tripId"),
+                autoScan = entry.arguments?.getBoolean("scan") ?: false,
                 onBack = { nav.popBackStack() },
                 onSaved = { nav.popBackStack() },
             )

@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DocumentScanner
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +43,7 @@ import com.shinsak.travle.ui.components.Fab
 import com.shinsak.travle.ui.components.InsetPanel
 import com.shinsak.travle.ui.components.MoneyText
 import com.shinsak.travle.ui.components.NeuCard
+import com.shinsak.travle.ui.components.NeuIconButton
 import com.shinsak.travle.ui.components.Pill
 import com.shinsak.travle.ui.components.RiseIn
 import com.shinsak.travle.ui.components.Segmented
@@ -57,6 +60,7 @@ fun HomeScreen(
     repo: TripRepository,
     onOpen: (String) -> Unit,
     onAdd: () -> Unit,
+    onScan: () -> Unit,
     onTab: (Tab) -> Unit,
 ) {
     val n = Neu
@@ -79,7 +83,11 @@ fun HomeScreen(
             Column(Modifier.padding(horizontal = 22.dp).padding(top = 22.dp, bottom = 12.dp)) {
                 Text("TRIP BUDGET", color = n.accent, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 2.4.sp)
                 Spacer(Modifier.height(6.dp))
-                Text("어디로 갈까", color = n.ink, fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("어디로 갈까", color = n.ink, fontSize = 28.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.6).sp)
+                    Spacer(Modifier.weight(1f))
+                    NeuIconButton(Icons.Rounded.DocumentScanner, contentDescription = "스크린샷으로 추가", onClick = onScan, size = 46.dp, radius = 17.dp, tint = n.accent, iconSize = 20.dp)
+                }
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "저장한 견적 ${trips.size}개 · 예산 상한 ${settings.budgetCap.manwon()}원",

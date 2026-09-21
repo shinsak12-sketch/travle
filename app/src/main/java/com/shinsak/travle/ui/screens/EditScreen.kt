@@ -21,7 +21,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import android.widget.Toast
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.DocumentScanner
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -42,10 +47,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shinsak.travle.data.CURRENCIES
 import com.shinsak.travle.data.CURRENCY_LABEL
 import com.shinsak.travle.data.Category
+import com.shinsak.travle.data.ParsedFlight
 import com.shinsak.travle.data.Trip
 import com.shinsak.travle.data.TripRepository
+import com.shinsak.travle.ui.ScanBusyDialog
+import com.shinsak.travle.ui.ScanResultDialog
+import com.shinsak.travle.ui.rememberScreenshotScanner
 import com.shinsak.travle.ui.components.AccentButton
 import com.shinsak.travle.ui.components.InsetField
+import com.shinsak.travle.ui.components.NeuButton
+import com.shinsak.travle.ui.components.NeuIconButton
 import com.shinsak.travle.ui.components.MoneyText
 import com.shinsak.travle.ui.components.NeuCard
 import com.shinsak.travle.ui.components.RiseIn
@@ -69,6 +80,7 @@ import kotlin.math.roundToLong
 fun EditScreen(
     repo: TripRepository,
     tripId: String?,
+    autoScan: Boolean = false,
     onBack: () -> Unit,
     onSaved: () -> Unit,
 ) {
@@ -98,10 +110,50 @@ fun EditScreen(
         }
     }
 
+    val ctx = LocalContext.current
+    var scanResult by remember { mutableStateOf<ParsedFlight?>(null) }
+    val scanner = rememberScreenshotScanner { parsed ->
+        if (parsed == null || parsed.isEmpty) {
+            Toast.makeText(ctx, "스크린샷에서 항공권 정보를 못 찾았음", Toast.LENGTH_SHORT).show()
+        } else {
+            scanResult = parsed
+        }
+    }
+    LaunchedEffect(Unit) { if (autoScan) scanner.launch() }
+
     val rate = if (currency == "KRW") 1.0 else parseAmount(fx)
     val sumForeign = Category.entries.sumOf { parseAmount(costs[it] ?: "") }
     val totalKrw = (sumForeign * rate).roundToLong()
     val perPerson = if (people > 0) totalKrw / people else totalKrw
+
+    fun applyParsed(p: ParsedFlight) {
+        p.destination?.let { name = it }
+        p.dateLabel?.let { month = it }
+        p.nights?.let { nn ->
+            nights = nn
+            days = p.days ?: (nn + 1)
+        }
+        p.people?.let { people = it }
+        p.totalPrice?.let { total ->
+            val v = if (currency == "KRW") total.toDouble() else total / (rate.takeIf { it > 0 } ?: 1.0)
+            costs[Category.FLIGHT] = formatTyped(v.trimZeros())
+        }
+        p.outboundMinutes?.let {
+            flightH = (it / 60).takeIf { h -> h > 0 }?.toString() ?: ""
+            flightM = (it % 60).takeIf { m -> m > 0 }?.toString() ?: ""
+        }
+        val note = buildList {
+            p.airline?.let { add(it) }
+            p.legs.getOrNull(0)?.let { add("가는편 $it") }
+            p.legs.getOrNull(1)?.let { add("오는편 $it") }
+            val priceBit = listOfNotNull(p.seller, p.pricePerPerson?.let { "${it.won()}원/인" }).joinToString(" ")
+            if (priceBit.isNotBlank()) add(priceBit)
+        }.joinToString(" · ")
+        if (note.isNotBlank()) {
+            memo = if (memo.isBlank()) "항공: $note" else "$memo\n항공: $note"
+        }
+        nameError = false
+    }
 
     fun save() {
         if (name.isBlank()) {
@@ -135,6 +187,7 @@ fun EditScreen(
             .imePadding(),
     ) {
         ScreenHeader(title = if (existing == null) "견적 입력" else "견적 수정", onBack = onBack) {
+            NeuIconButton(Icons.Rounded.DocumentScanner, contentDescription = "스크린샷에서 가져오기", onClick = { scanner.launch() }, size = 40.dp, radius = 15.dp, tint = n.accent, iconSize = 19.dp)
             Box(
                 modifier = Modifier
                     .height(40.dp)
@@ -155,6 +208,16 @@ fun EditScreen(
                 .padding(top = 4.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            RiseIn(0) {
+                NeuButton(
+                    "항공권 검색 스크린샷에서 가져오기",
+                    onClick = { scanner.launch() },
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 48.dp, radius = 17.dp,
+                    icon = Icons.Rounded.DocumentScanner,
+                )
+            }
+
             RiseIn(0) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -373,5 +436,17 @@ fun EditScreen(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).padding(bottom = 6.dp),
         )
         Spacer(Modifier.navigationBarsPadding())
+    }
+
+    if (scanner.busy.value) ScanBusyDialog()
+    scanResult?.let { parsed ->
+        ScanResultDialog(
+            parsed = parsed,
+            onApply = {
+                applyParsed(parsed)
+                scanResult = null
+            },
+            onDismiss = { scanResult = null },
+        )
     }
 }
