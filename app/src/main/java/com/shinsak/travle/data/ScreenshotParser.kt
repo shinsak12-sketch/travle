@@ -45,8 +45,10 @@ object ScreenshotParser {
     /** "10월 9일 (편도)" 같이 하루만 있을 때 */
     private val DATE_SINGLE = Regex("(\\d{1,2})\\s*월\\s*(\\d{1,2})\\s*일")
     private val PEOPLE = Regex("(?:여행객|승객|성인|인원)\\s*(\\d{1,2})\\s*명?")
-    /** 시간 토큰 하나. "오후 6:35", "18:35", "6.35"(OCR 오인식), 뒤에 "+1" 가능 */
-    private val TIME_TOKEN = Regex("(오전|오후|AM|PM|am|pm)?\\s*(\\d{1,2})\\s*[:.;：∶]\\s*(\\d{2})(?!\\d)(?:\\s*\\+\\s*(\\d))?")
+    /** 오전/오후 표기. OCR이 "오 후", "오휴"로 읽는 경우 포함 */
+    private const val AMPM = "(?:오\\s*[전후휴호]|[AaPp][Mm])"
+    /** 시간 토큰 하나. 숫자를 O/S/l/B 같은 글자로 읽은 것도 허용 (뒤에서 보정) */
+    private val TIME_TOKEN = Regex("($AMPM)?\\s*([0-9OoQDlI]{1,2})\\s*[:.;：∶]\\s*([0-9OoQDlISB]{2})(?![0-9])(?:\\s*\\+\\s*(\\d))?")
     private val TIME_RANGE = Regex("((?:오전|오후)\\s*\\d{1,2}[:.;：∶]\\d{2})\\s*$DASH\\s*((?:오전|오후)\\s*\\d{1,2}[:.;：∶]\\d{2})")
     private val TIME_RANGE_24 = Regex("(\\d{1,2}[:.;：∶]\\d{2})\\s*$DASH\\s*(\\d{1,2}[:.;：∶]\\d{2})")
     private val DURATION = Regex("(?:(\\d{1,2})\\s*시간)?\\s*(?:(\\d{1,2})\\s*분)?")
@@ -144,32 +146,14 @@ object ScreenshotParser {
         }
 
         // 5) 구간 시간 · 소요시간
-        // OCR이 "오후 6:35 – 오후 7:00"을 대시에서 끊어 두 줄로 주는 경우가 많아서,
-        // 줄 단위가 아니라 시간 토큰을 순서대로 모아 둘씩 짝지음. 상태바 시계(맨 위 "11:23")는
-        // 노선/날짜 줄보다 위에 있으므로 그 앞은 버림.
+        // 행(row) 단위로 본다: 같은 행의 시간 둘 = 출발·도착. 행에 하나만 있으면 앞에 대시가 있는지로 출발/도착 판단.
+        // 다른 행끼리 억지로 짝짓지 않음. 상태바 시계는 노선/날짜 행보다 위라 제외.
         val headerIdx = clean.indexOfFirst { ROUTE.containsMatchIn(it) || DATE_RANGE_A.containsMatchIn(it) || DATE_RANGE_B.containsMatchIn(it) || PEOPLE.containsMatchIn(it) }
         val body = if (headerIdx >= 0) clean.drop(headerIdx) else clean
-        val tokens = body.flatMap { l ->
-            TIME_TOKEN.findAll(l).mapNotNull { m ->
-                val ampm = m.groupValues[1]
-                var h = m.groupValues[2].toIntOrNull() ?: return@mapNotNull null
-                val min = m.groupValues[3]
-                if (min.toInt() > 59) return@mapNotNull null
-                val plus = m.groupValues[4]
-                // 오전/오후 없는 24시간 표기: 0..23 만, 앞에 숫자 붙은 "4.8/5" 류는 이미 (?!\\d)로 걸러짐
-                if (ampm.isEmpty() && h > 23) return@mapNotNull null
-                if (ampm.isNotEmpty() && h > 12) return@mapNotNull null
-                when (ampm) {
-                    "오후", "PM", "pm" -> if (h < 12) h += 12
-                    "오전", "AM", "am" -> if (h == 12) h = 0
-                }
-                "%02d:%s".format(h, min) + (if (plus.isNotEmpty()) "+$plus" else "")
-            }.toList()
-        }
-        val times = tokens.chunked(2).filter { it.size == 2 }.map { it[0] to it[1] }
+        val times = body.mapNotNull { row -> rowTimes(row) }
         val durations = clean.mapNotNull { l ->
             // 시간 범위가 같이 있는 줄은 소요시간이 아님
-            if (TIME_RANGE.containsMatchIn(l) || TIME_RANGE_24.containsMatchIn(l)) return@mapNotNull null
+            if (rowTimes(l) != null) return@mapNotNull null
             val m = DURATION_STRICT.find(l) ?: return@mapNotNull null
             val h = m.groupValues[1].toIntOrNull()
             val mm = m.groupValues[2].toIntOrNull()
@@ -223,6 +207,52 @@ object ScreenshotParser {
         val b = Calendar.getInstance().apply { clear(); set(y2, m2 - 1, d2) }
         val diff = ((b.timeInMillis - a.timeInMillis) / 86_400_000L).toInt()
         return diff.takeIf { it in 0..120 }
+    }
+
+    private fun fixDigits(t: String): String = t.map {
+        when (it) {
+            'O', 'o', 'Q', 'D' -> '0'
+            'l', 'I', '|' -> '1'
+            'S' -> '5'
+            'B' -> '8'
+            else -> it
+        }
+    }.joinToString("")
+
+    private fun isPm(s: String) = Regex("오\\s*[후휴호]|[Pp][Mm]").containsMatchIn(s)
+    private fun isAm(s: String) = Regex("오\\s*[전잔]|[Aa][Mm]").containsMatchIn(s)
+
+    /** 한 행에서 출발/도착 뽑기. 없으면 null. */
+    private fun rowTimes(row: String): Pair<String, String>? {
+        val ms = TIME_TOKEN.findAll(row).toList()
+        if (ms.isEmpty()) return null
+        val rowPm = isPm(row)
+        val rowAm = isAm(row)
+        val toks = ms.mapNotNull { m ->
+            var h = fixDigits(m.groupValues[2]).toIntOrNull() ?: return@mapNotNull null
+            val min = fixDigits(m.groupValues[3])
+            if ((min.toIntOrNull() ?: 99) > 59) return@mapNotNull null
+            val own = m.groupValues[1]
+            val pm = if (own.isNotEmpty()) isPm(own) else rowPm
+            val am = if (own.isNotEmpty()) isAm(own) else rowAm
+            if ((pm || am) && h > 12) return@mapNotNull null
+            if (!pm && !am && h > 23) return@mapNotNull null
+            if (pm && h < 12) h += 12
+            if (am && h == 12) h = 0
+            val plus = m.groupValues[4]
+            Triple(m.range.first, "%02d:%s".format(h, min), plus)
+        }
+        if (toks.isEmpty()) return null
+        if (toks.size >= 2) {
+            val a = toks[0]
+            val b = toks[1]
+            return a.second to (b.second + if (b.third.isNotEmpty()) "+${b.third}" else "")
+        }
+        // 하나만: 바로 앞 몇 글자 안에 대시가 있으면 도착, 아니면 출발
+        val t = toks[0]
+        val before = row.substring(0, t.first).takeLast(8)
+        val isArr = Regex(DASH).containsMatchIn(before)
+        return if (isArr) "" to t.second else t.second to ""
     }
 
     /** "오후 6:35" → "18:35", "오전 12:10" → "00:10", "오후 12:20" → "12:20" */

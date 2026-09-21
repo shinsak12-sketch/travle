@@ -79,15 +79,34 @@ private fun recognize(ctx: Context, uri: Uri, done: (ParsedFlight?) -> Unit) {
     val recognizer = TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
     recognizer.process(image)
         .addOnSuccessListener { text ->
-            // 블록 → 줄로 펼치고 위→아래, 왼→오른쪽 순으로
-            val lines = text.textBlocks
-                .flatMap { it.lines }
-                .sortedWith(compareBy({ it.boundingBox?.top ?: 0 }, { it.boundingBox?.left ?: 0 }))
-                .map { it.text }
-            done(ScreenshotParser.parse(lines))
+            done(ScreenshotParser.parse(rebuildRows(text)))
         }
         .addOnFailureListener { done(null) }
         .addOnCompleteListener { recognizer.close() }
+}
+
+/**
+ * ML Kit이 주는 "줄"은 대시나 열 간격에서 멋대로 끊기므로, 단어(Element) 좌표로 행을 다시 묶는다.
+ * 세로 중심이 비슷한 단어끼리 한 행, 행 안에서는 왼→오른쪽. 스카이스캐너처럼 항상 같은 배치인 화면에서
+ * "오후 9:50 – 오후 10:50 직항"이 한 행으로 안정적으로 나온다.
+ */
+private fun rebuildRows(text: com.google.mlkit.vision.text.Text): List<String> {
+    data class W(val s: String, val cx: Int, val cy: Int, val h: Int)
+    val words = text.textBlocks.flatMap { b -> b.lines.flatMap { l -> l.elements } }
+        .mapNotNull { e ->
+            val r = e.boundingBox ?: return@mapNotNull null
+            W(e.text, r.centerX(), r.centerY(), r.height().coerceAtLeast(1))
+        }
+        .sortedBy { it.cy }
+    if (words.isEmpty()) return text.textBlocks.flatMap { it.lines }.map { it.text }
+    val medianH = words.map { it.h }.sorted()[words.size / 2]
+    val tol = (medianH * 0.6f).toInt().coerceAtLeast(6)
+    val rows = mutableListOf<MutableList<W>>()
+    for (w in words) {
+        val row = rows.lastOrNull()
+        if (row != null && kotlin.math.abs(row.map { it.cy }.average().toInt() - w.cy) <= tol) row.add(w) else rows.add(mutableListOf(w))
+    }
+    return rows.map { r -> r.sortedBy { it.cx }.joinToString(" ") { it.s } }
 }
 
 @Composable
