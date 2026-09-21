@@ -177,9 +177,16 @@ private fun TripCard(
             add(trip.periodLabel)
             add("${trip.people}인")
             if (trip.month.isNotBlank()) add(trip.month)
-            if (trip.flightLabel.isNotEmpty()) add("비행 ${trip.flightLabel}")
         }.joinToString(" · ")
-        Text(meta, color = n.ink2, fontSize = 12.sp)
+        Text(meta, color = n.ink2, fontSize = 12.sp, maxLines = 1)
+        val flight = buildList {
+            if (trip.flightSummary.isNotBlank()) add(trip.flightSummary)
+            if (trip.flightLabel.isNotEmpty()) add(trip.flightLabel)
+        }.joinToString(" · ")
+        if (flight.isNotBlank()) {
+            Spacer(Modifier.height(3.dp))
+            Text("✈ $flight", color = n.accent, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+        }
         Spacer(Modifier.height(13.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             MoneyText(big, size = 28, color = bigColor)

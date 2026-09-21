@@ -129,18 +129,42 @@ fun DetailScreen(
                             Text("${trip.perPersonKrw.won()}원", color = n.accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-                    if (trip.flightLabel.isNotEmpty() || trip.currency != "KRW") {
+                    if (trip.currency != "KRW") {
                         Spacer(Modifier.height(10.dp))
-                        val bits = buildList {
-                            if (trip.flightLabel.isNotEmpty()) add("비행 ${trip.flightLabel}")
-                            if (trip.currency != "KRW") add("${trip.currency} 기준 · 환율 ${trip.fxRate}")
-                        }
-                        Text(bits.joinToString(" · "), color = n.ink2, fontSize = 11.5.sp)
+                        Text("${trip.currency} 기준 · 환율 ${trip.fxRate}", color = n.ink2, fontSize = 11.5.sp)
                     }
                 }
             }
 
-            RiseIn(1) {
+            val hasFlight = trip.airline.isNotBlank() || trip.outbound != null || trip.inbound != null
+            if (hasFlight) {
+                RiseIn(1) {
+                    NeuCard(modifier = Modifier.fillMaxWidth()) {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            SectionLabel("항공편")
+                            Spacer(Modifier.weight(1f))
+                            if (trip.airline.isNotBlank()) {
+                                Text(trip.airline, color = n.accent, fontSize = 12.5.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        listOf("가는편" to trip.outbound, "오는편" to trip.inbound).forEach { (title, leg) ->
+                            if (leg != null) {
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                                    Text(title, color = n.ink2, fontSize = 12.sp, modifier = Modifier.width(52.dp))
+                                    Text(leg.timeLabel.ifBlank { "—" }, color = n.ink, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, letterSpacing = (-0.5).sp)
+                                    Spacer(Modifier.weight(1f))
+                                    if (leg.durationLabel.isNotBlank()) {
+                                        Text(leg.durationLabel, color = n.ink2, fontSize = 12.sp)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            RiseIn(2) {
                 NeuCard(modifier = Modifier.fillMaxWidth(), radius = 25.dp, padding = PaddingValues(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 14.dp)) {
                     SectionLabel("항목별 비중")
                     Spacer(Modifier.height(10.dp))
@@ -169,7 +193,7 @@ fun DetailScreen(
                 }
             }
 
-            RiseIn(2) {
+            RiseIn(3) {
                 NeuCard(modifier = Modifier.fillMaxWidth()) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         SectionLabel("예산 상한 대비")
@@ -192,7 +216,7 @@ fun DetailScreen(
             }
 
             if (trip.memo.isNotBlank()) {
-                RiseIn(3) {
+                RiseIn(4) {
                     InsetPanel(modifier = Modifier.fillMaxWidth(), radius = 20.dp, padding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)) {
                         SectionLabel("메모", color = n.ink2)
                         Spacer(Modifier.height(6.dp))

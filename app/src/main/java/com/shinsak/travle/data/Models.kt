@@ -12,6 +12,32 @@ enum class Category(val label: String, val short: String) {
     ETC("기타 (비자·보험)", "기타"),
 }
 
+/** 항공 구간 하나. 시간은 "18:35" 같은 24시간 문자열, 도착에 "+1" 붙을 수 있음. */
+data class FlightLeg(
+    val dep: String = "",
+    val arr: String = "",
+    val minutes: Int = 0,
+) {
+    val isEmpty: Boolean get() = dep.isBlank() && arr.isBlank() && minutes <= 0
+
+    val timeLabel: String
+        get() = listOf(dep, arr).filter { it.isNotBlank() }.joinToString(" → ")
+
+    val durationLabel: String
+        get() = if (minutes <= 0) "" else {
+            val h = minutes / 60
+            val m = minutes % 60
+            when {
+                h > 0 && m > 0 -> "${h}시간 ${m}분"
+                h > 0 -> "${h}시간"
+                else -> "${m}분"
+            }
+        }
+
+    val label: String
+        get() = listOf(timeLabel, durationLabel.takeIf { it.isNotBlank() }?.let { "($it)" }).filterNotNull().joinToString(" ")
+}
+
 data class Trip(
     val id: String = UUID.randomUUID().toString(),
     val name: String = "",
@@ -26,6 +52,9 @@ data class Trip(
     /** 입력 통화 기준 금액 */
     val costs: Map<Category, Double> = emptyMap(),
     val flightMinutes: Int = 0,
+    val airline: String = "",
+    val outbound: FlightLeg? = null,
+    val inbound: FlightLeg? = null,
     val rating: Int = 3,
     val memo: String = "",
     val createdAt: Long = System.currentTimeMillis(),
@@ -55,6 +84,11 @@ data class Trip(
 
     val periodLabel: String
         get() = "${nights}박 ${days}일"
+
+    /** 카드용 한 줄: "대한항공 · 18:35 → 19:00" */
+    val flightSummary: String
+        get() = listOf(airline.takeIf { it.isNotBlank() }, outbound?.timeLabel?.takeIf { it.isNotBlank() })
+            .filterNotNull().joinToString(" · ")
 }
 
 data class Settings(

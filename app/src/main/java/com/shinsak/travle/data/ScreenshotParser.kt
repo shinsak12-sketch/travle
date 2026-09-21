@@ -13,8 +13,8 @@ data class ParsedFlight(
     val days: Int? = null,
     val people: Int? = null,
     val airline: String? = null,
-    /** "오후 6:35 – 오후 7:00 (1시간 25분)" 같은 구간 설명, 가는편부터 */
-    val legs: List<String> = emptyList(),
+    /** 가는편부터. 시간은 24시간 "18:35" 로 정규화 */
+    val legs: List<FlightLeg> = emptyList(),
     val outboundMinutes: Int? = null,
     val pricePerPerson: Long? = null,
     val totalPrice: Long? = null,
@@ -143,8 +143,8 @@ object ScreenshotParser {
 
         // 5) 구간 시간 · 소요시간
         val times = clean.mapNotNull { l ->
-            TIME_RANGE.find(l)?.let { "${it.groupValues[1]} – ${it.groupValues[2]}${it.groupValues[3].trim()}" }
-                ?: TIME_RANGE_24.find(l)?.let { "${it.groupValues[1]} – ${it.groupValues[2]}${it.groupValues[3].trim()}" }
+            TIME_RANGE.find(l)?.let { to24(it.groupValues[1]) to (to24(it.groupValues[2]) + it.groupValues[3].trim()) }
+                ?: TIME_RANGE_24.find(l)?.let { it.groupValues[1] to (it.groupValues[2] + it.groupValues[3].trim()) }
         }
         val durations = clean.mapNotNull { l ->
             // 시간 범위가 같이 있는 줄은 소요시간이 아님
@@ -160,8 +160,7 @@ object ScreenshotParser {
             }
         }
         val legs = times.mapIndexed { i, t ->
-            val d = durations.getOrNull(i)
-            if (d != null) "$t (${minutesLabel(d)})" else t
+            FlightLeg(dep = t.first, arr = t.second, minutes = durations.getOrNull(i) ?: 0)
         }
         val outbound = durations.firstOrNull()
 
@@ -203,6 +202,16 @@ object ScreenshotParser {
         val b = Calendar.getInstance().apply { clear(); set(y2, m2 - 1, d2) }
         val diff = ((b.timeInMillis - a.timeInMillis) / 86_400_000L).toInt()
         return diff.takeIf { it in 0..120 }
+    }
+
+    /** "오후 6:35" → "18:35", "오전 12:10" → "00:10", "오후 12:20" → "12:20" */
+    fun to24(t: String): String {
+        val m = Regex("(오전|오후)\\s*(\\d{1,2}):(\\d{2})").find(t) ?: return t.trim()
+        var h = m.groupValues[2].toInt()
+        val min = m.groupValues[3]
+        if (m.groupValues[1] == "오후" && h < 12) h += 12
+        if (m.groupValues[1] == "오전" && h == 12) h = 0
+        return "%02d:%s".format(h, min)
     }
 
     fun minutesLabel(min: Int): String {

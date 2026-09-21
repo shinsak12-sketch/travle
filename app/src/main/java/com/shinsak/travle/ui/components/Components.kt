@@ -388,6 +388,8 @@ fun Stepper(
             color = n.ink,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            softWrap = false,
         )
         StepButton(Icons.Rounded.Add, "$label 늘리기", n.accent, onPlus)
     }
@@ -399,7 +401,7 @@ private fun StepButton(icon: ImageVector, desc: String, tint: Color, onClick: ()
     Box(
         modifier = Modifier
             .fillMaxHeight()
-            .width(40.dp)
+            .width(38.dp)
             .pressable(onClick = onClick)
             .neuRaised(radius = 13.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 7.dp),
         contentAlignment = Alignment.Center,
@@ -559,7 +561,7 @@ fun ScreenHeader(
     ) {
         if (onBack != null) BackButton(onBack)
         Column(Modifier.weight(1f)) {
-            Text(title, color = n.ink, fontSize = if (onBack != null) 22.sp else 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp)
+            Text(title, color = n.ink, fontSize = if (onBack != null) 22.sp else 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp, maxLines = 1)
             if (subtitle != null) {
                 Text(subtitle, color = n.ink2, fontSize = 11.5.sp, modifier = Modifier.padding(top = 2.dp))
             }

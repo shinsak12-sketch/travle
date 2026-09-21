@@ -44,6 +44,9 @@ object JsonStore {
         t.costs.forEach { (c, v) -> costs.put(c.name, v) }
         put("costs", costs)
         put("flightMinutes", t.flightMinutes)
+        put("airline", t.airline)
+        t.outbound?.let { put("outbound", legToJson(it)) }
+        t.inbound?.let { put("inbound", legToJson(it)) }
         put("rating", t.rating)
         put("memo", t.memo)
         put("createdAt", t.createdAt)
@@ -68,12 +71,24 @@ object JsonStore {
             fxRate = o.optDouble("fxRate", 1.0),
             costs = costs,
             flightMinutes = o.optInt("flightMinutes", 0),
+            airline = o.optString("airline"),
+            outbound = o.optJSONObject("outbound")?.let { legFromJson(it) },
+            inbound = o.optJSONObject("inbound")?.let { legFromJson(it) },
             rating = o.optInt("rating", 3).coerceIn(0, 5),
             memo = o.optString("memo"),
             createdAt = created,
             updatedAt = o.optLong("updatedAt", created),
         )
     }
+
+    private fun legToJson(l: FlightLeg): JSONObject = JSONObject().apply {
+        put("dep", l.dep)
+        put("arr", l.arr)
+        put("minutes", l.minutes)
+    }
+
+    private fun legFromJson(o: JSONObject): FlightLeg? =
+        FlightLeg(dep = o.optString("dep"), arr = o.optString("arr"), minutes = o.optInt("minutes", 0)).takeIf { !it.isEmpty }
 
     fun settingsToJson(s: Settings): JSONObject = JSONObject().apply {
         put("budgetCap", s.budgetCap)
