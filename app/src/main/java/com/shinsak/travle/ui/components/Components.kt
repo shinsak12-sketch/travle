@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -445,8 +447,8 @@ fun NeuToggle(checked: Boolean, onChange: (Boolean) -> Unit, desc: String) {
 @Composable
 fun ChipRow(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, height: Dp = 38.dp) {
     val n = Neu
-    androidx.compose.foundation.lazy.LazyRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        androidx.compose.foundation.lazy.itemsIndexed(options) { i, label ->
+    LazyRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        itemsIndexed(options) { i, label ->
             val on = i == selected
             Box(
                 modifier = Modifier
