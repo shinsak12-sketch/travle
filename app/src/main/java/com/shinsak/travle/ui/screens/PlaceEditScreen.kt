@@ -52,6 +52,7 @@ import com.shinsak.travle.ui.components.ConfirmDialog
 import com.shinsak.travle.ui.components.InsetField
 import com.shinsak.travle.ui.components.NeuButton
 import com.shinsak.travle.ui.components.NeuIconButton
+import com.shinsak.travle.ui.components.PasteButton
 import com.shinsak.travle.ui.components.RiseIn
 import com.shinsak.travle.ui.components.ScreenHeader
 import com.shinsak.travle.ui.components.SectionLabel
@@ -187,7 +188,8 @@ fun PlaceEditScreen(
                                 placeholder = "구글맵·바이두맵 링크 붙여넣기", fontSize = 13,
                                 leading = { Icon(Icons.Rounded.Link, contentDescription = null, tint = n.hint, modifier = Modifier.size(16.dp)) },
                             )
-                            NeuButton("열기", onClick = { openMap(ctx, mapLink.ifBlank { address }) }, height = 48.dp, radius = 15.dp, enabled = mapLink.isNotBlank() || address.isNotBlank())
+                            if (mapLink.isBlank()) PasteButton(onPaste = { mapLink = it }, height = 48.dp)
+                            else NeuButton("열기", onClick = { openMap(ctx, mapLink.ifBlank { address }) }, height = 48.dp, radius = 15.dp)
                         }
                         Spacer(Modifier.height(8.dp))
                         InsetField(value = address, onValueChange = { address = it }, modifier = Modifier.fillMaxWidth(), height = 44.dp, placeholder = "주소 (링크 없으면 주소로 검색됨)", fontSize = 13)

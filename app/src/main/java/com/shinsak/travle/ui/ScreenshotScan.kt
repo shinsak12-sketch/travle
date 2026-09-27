@@ -88,7 +88,10 @@ private class RowData(val text: String, val rect: Rect, val words: List<Pair<Str
 private val TIME_LIKE = Regex("[0-9OoQDlIgq]{1,4}\\s*[:.;：∶]\\s*[0-9OoQDlISBgq]{2}")
 private val AMPM_WORD = Regex("오\\s*[전후휴호]|[AaPp][Mm]")
 
-private suspend fun recognize(ctx: Context, uri: Uri): ParsedFlight? = withContext(Dispatchers.Default) {
+private suspend fun recognize(ctx: Context, uri: Uri): ParsedFlight? = ScreenshotParser.parse(recognizeLines(ctx, uri))
+
+/** 스크린샷 → 행 단위 텍스트 (위→아래). 항공권 외 다른 캡쳐(숙소 예약 등)에도 씀. */
+suspend fun recognizeLines(ctx: Context, uri: Uri): List<String> = withContext(Dispatchers.Default) {
     val bitmap = ImageDecoder.decodeBitmap(ImageDecoder.createSource(ctx.contentResolver, uri)) { decoder, _, _ ->
         decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
         decoder.isMutableRequired = false
@@ -97,10 +100,70 @@ private suspend fun recognize(ctx: Context, uri: Uri): ParsedFlight? = withConte
     try {
         val text = recognizer.process(InputImage.fromBitmap(bitmap, 0)).await()
         val rows = rebuildRows(text)
-        val fixed = rows.map { row -> repairAmPm(recognizer, bitmap, row) }
-        ScreenshotParser.parse(fixed)
+        rows.map { row -> repairAmPm(recognizer, bitmap, row) }
     } finally {
         recognizer.close()
+    }
+}
+
+/** 사진 고르기 → OCR 행 목록. 결과 해석은 호출부 몫. */
+@Composable
+fun rememberScreenshotLines(onResult: (List<String>?) -> Unit): ScreenshotScanner {
+    val ctx = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val busy = remember { mutableStateOf(false) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        busy.value = true
+        scope.launch {
+            val lines = runCatching { recognizeLines(ctx, uri) }.getOrNull()
+            busy.value = false
+            onResult(lines)
+        }
+    }
+    return remember(picker) {
+        ScreenshotScanner(busy) { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+    }
+}
+
+/** 인식 결과 확인 (범용). rows = 라벨 → 값(null이면 못 찾음) */
+@Composable
+fun ScanRowsDialog(title: String, rows: List<Pair<String, String?>>, rawLines: List<String>, onApply: () -> Unit, onDismiss: () -> Unit) {
+    val n = Neu
+    var showRaw by remember { mutableStateOf(false) }
+    val clipboard = LocalClipboardManager.current
+    Dialog(onDismissRequest = onDismiss) {
+        NeuCard(radius = 26.dp, padding = PaddingValues(22.dp)) {
+            Text(title, color = n.ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(4.dp))
+            Text("맞으면 적용, 틀린 건 적용 후에 직접 고치면 됨", color = n.ink2, fontSize = 12.sp)
+            Spacer(Modifier.height(14.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                rows.forEach { (label, value) ->
+                    Row(verticalAlignment = Alignment.Top) {
+                        Text(label, color = n.ink2, fontSize = 12.5.sp, modifier = Modifier.width(76.dp).padding(top = 1.dp))
+                        Text(value ?: "못 찾음", color = if (value != null) n.ink else n.hint, fontSize = 13.sp, fontWeight = if (value != null) FontWeight.SemiBold else FontWeight.Normal, lineHeight = 18.sp, modifier = Modifier.fillMaxWidth())
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (showRaw) "원문 접기" else "인식된 원문 보기 (${rawLines.size}줄)",
+                    color = n.accent, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.pressable { showRaw = !showRaw }.padding(vertical = 4.dp),
+                )
+                if (showRaw) {
+                    InsetPanel(modifier = Modifier.fillMaxWidth(), radius = 14.dp, padding = PaddingValues(12.dp)) {
+                        rawLines.forEachIndexed { i, l -> Text("${i + 1}. $l", color = n.ink2, fontSize = 10.5.sp, lineHeight = 15.sp) }
+                    }
+                    Text("원문 복사", color = n.accent, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.pressable { clipboard.setText(AnnotatedString(rawLines.joinToString("\n"))) }.padding(vertical = 4.dp))
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                NeuButton("취소", onClick = onDismiss, modifier = Modifier.weight(1f), color = n.ink2)
+                AccentButton("적용", onClick = onApply, modifier = Modifier.weight(1f), height = 46.dp, radius = 17.dp)
+            }
+        }
     }
 }
 

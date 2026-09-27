@@ -35,6 +35,7 @@ import androidx.compose.material.icons.rounded.ArrowBackIosNew
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.ConfirmationNumber
+import androidx.compose.material.icons.rounded.ContentPaste
 import androidx.compose.material.icons.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Star
@@ -438,6 +439,40 @@ fun NeuToggle(checked: Boolean, onChange: (Boolean) -> Unit, desc: String) {
                 .neuRaised(radius = 12.dp, fill = if (checked) Color.White else n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 2.dp, blur = 6.dp),
         )
     }
+}
+
+/** 가로 스크롤 단일 선택 칩. selected는 options 인덱스, -1이면 없음 */
+@Composable
+fun ChipRow(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier, height: Dp = 38.dp) {
+    val n = Neu
+    androidx.compose.foundation.lazy.LazyRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        androidx.compose.foundation.lazy.itemsIndexed(options) { i, label ->
+            val on = i == selected
+            Box(
+                modifier = Modifier
+                    .height(height)
+                    .pressable { onSelect(i) }
+                    .then(
+                        if (on) Modifier.neuRaised(radius = 13.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 8.dp)
+                        else Modifier.neuInset(radius = 13.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 7.dp)
+                    )
+                    .padding(horizontal = 13.dp),
+                contentAlignment = Alignment.Center,
+            ) { Text(label, color = if (on) n.accent else n.ink2, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium, maxLines = 1) }
+        }
+    }
+}
+
+/** 클립보드 붙여넣기 버튼. 텍스트 없으면 아무것도 안 함. */
+@Composable
+fun PasteButton(onPaste: (String) -> Unit, modifier: Modifier = Modifier, height: Dp = 44.dp) {
+    val clipboard = androidx.compose.ui.platform.LocalClipboardManager.current
+    NeuButton(
+        "붙여넣기",
+        onClick = { clipboard.getText()?.text?.trim()?.takeIf { it.isNotEmpty() }?.let(onPaste) },
+        modifier = modifier, height = height, radius = 14.dp,
+        icon = Icons.Rounded.ContentPaste,
+    )
 }
 
 // ---------------------------------------------------------------- 표시
