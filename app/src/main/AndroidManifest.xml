@@ -6,6 +6,14 @@
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
+    <!-- 클로드 앱·지도앱으로 넘기기 위한 패키지 가시성 (Android 11+) -->
+    <queries>
+        <package android:name="com.anthropic.claude" />
+        <intent><action android:name="android.intent.action.SEND" /><data android:mimeType="text/plain" /></intent>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="geo" /></intent>
+        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>
+    </queries>
+
     <application
         android:name=".TravleApp"
         android:allowBackup="true"

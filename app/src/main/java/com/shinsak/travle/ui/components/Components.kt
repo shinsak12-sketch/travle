@@ -32,12 +32,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBackIosNew
-import androidx.compose.material.icons.rounded.BarChart
-import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Checklist
+import androidx.compose.material.icons.rounded.ConfirmationNumber
+import androidx.compose.material.icons.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -571,10 +571,10 @@ fun ScreenHeader(
 }
 
 enum class Tab(val label: String, val icon: ImageVector) {
-    HOME("홈", Icons.Rounded.Home),
-    COMPARE("비교", Icons.Rounded.BarChart),
-    INPUT("입력", Icons.Rounded.EditNote),
-    SETTINGS("설정", Icons.Rounded.Tune),
+    PLAN("일정", Icons.Rounded.CalendarMonth),
+    LEDGER("가계부", Icons.Rounded.ReceiptLong),
+    CHECK("체크", Icons.Rounded.Checklist),
+    BOOKING("예약", Icons.Rounded.ConfirmationNumber),
 }
 
 @Composable

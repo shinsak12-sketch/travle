@@ -1,5 +1,6 @@
 package com.shinsak.travle.ui
 
+import android.net.Uri
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,38 +16,52 @@ import androidx.navigation.navArgument
 import com.shinsak.travle.data.TripRepository
 import com.shinsak.travle.ui.components.Ease
 import com.shinsak.travle.ui.components.Tab
-import com.shinsak.travle.ui.screens.CompareScreen
-import com.shinsak.travle.ui.screens.DetailScreen
-import com.shinsak.travle.ui.screens.EditScreen
-import com.shinsak.travle.ui.screens.HomeScreen
+import com.shinsak.travle.ui.screens.BookingScreen
+import com.shinsak.travle.ui.screens.ChecklistScreen
+import com.shinsak.travle.ui.screens.CityScreen
+import com.shinsak.travle.ui.screens.DatesScreen
+import com.shinsak.travle.ui.screens.ExpenseEditScreen
+import com.shinsak.travle.ui.screens.LedgerScreen
+import com.shinsak.travle.ui.screens.PlaceEditScreen
 import com.shinsak.travle.ui.screens.SettingsScreen
+import com.shinsak.travle.ui.screens.TripHomeScreen
+import com.shinsak.travle.ui.screens.TripsScreen
 
 object Routes {
-    const val HOME = "home"
-    const val COMPARE = "compare"
+    const val TRIPS = "trips"
     const val SETTINGS = "settings"
-    const val EDIT = "edit?tripId={tripId}&scan={scan}"
-    const val DETAIL = "detail/{tripId}"
+    const val CITY = "new/city"
+    const val DATES = "new/dates/{city}/{currency}"
+    const val TRIP = "trip/{id}"
+    const val PLACE = "trip/{id}/place?itemId={itemId}&day={day}"
+    const val LEDGER = "trip/{id}/ledger"
+    const val EXPENSE = "trip/{id}/expense?expId={expId}&day={day}"
+    const val CHECKS = "trip/{id}/checks"
+    const val BOOKING = "trip/{id}/booking"
 
-    fun edit(tripId: String? = null, scan: Boolean = false): String {
-        val base = if (tripId == null) "edit" else "edit?tripId=$tripId"
-        return if (scan) (if (tripId == null) "edit?scan=true" else "$base&scan=true") else base
-    }
-    fun detail(tripId: String) = "detail/$tripId"
+    fun dates(city: String, currency: String) = "new/dates/${Uri.encode(city)}/$currency"
+    fun trip(id: String) = "trip/$id"
+    fun place(id: String, itemId: String? = null, day: Int = 1) = "trip/$id/place?day=$day" + (itemId?.let { "&itemId=$it" } ?: "")
+    fun ledger(id: String) = "trip/$id/ledger"
+    fun expense(id: String, expId: String? = null, day: Int = 0) = "trip/$id/expense?day=$day" + (expId?.let { "&expId=$it" } ?: "")
+    fun checks(id: String) = "trip/$id/checks"
+    fun booking(id: String) = "trip/$id/booking"
 }
 
-private fun NavHostController.goTab(tab: Tab) {
-    when (tab) {
-        Tab.HOME -> popBackStack(Routes.HOME, inclusive = false)
-        Tab.INPUT -> navigate(Routes.edit()) { launchSingleTop = true }
-        Tab.COMPARE -> navigate(Routes.COMPARE) {
-            popUpTo(Routes.HOME) { inclusive = false }
-            launchSingleTop = true
-        }
-        Tab.SETTINGS -> navigate(Routes.SETTINGS) {
-            popUpTo(Routes.HOME) { inclusive = false }
-            launchSingleTop = true
-        }
+private fun NavHostController.goTab(tripId: String, tab: Tab) {
+    val route = when (tab) {
+        Tab.PLAN -> Routes.trip(tripId)
+        Tab.LEDGER -> Routes.ledger(tripId)
+        Tab.CHECK -> Routes.checks(tripId)
+        Tab.BOOKING -> Routes.booking(tripId)
+    }
+    if (tab == Tab.PLAN) {
+        popBackStack(Routes.trip(tripId), inclusive = false)
+        return
+    }
+    navigate(route) {
+        popUpTo(Routes.trip(tripId)) { inclusive = false }
+        launchSingleTop = true
     }
 }
 
@@ -55,72 +70,97 @@ fun TravleNavHost(repo: TripRepository) {
     val nav = rememberNavController()
     NavHost(
         navController = nav,
-        startDestination = Routes.HOME,
-        enterTransition = {
-            fadeIn(tween(240, easing = Ease)) + slideInHorizontally(tween(340, easing = Ease)) { it / 7 }
-        },
+        startDestination = Routes.TRIPS,
+        enterTransition = { fadeIn(tween(240, easing = Ease)) + slideInHorizontally(tween(340, easing = Ease)) { it / 7 } },
         exitTransition = { fadeOut(tween(180)) },
         popEnterTransition = { fadeIn(tween(240, easing = Ease)) },
-        popExitTransition = {
-            fadeOut(tween(200)) + slideOutHorizontally(tween(320, easing = Ease)) { it / 7 }
-        },
+        popExitTransition = { fadeOut(tween(200)) + slideOutHorizontally(tween(320, easing = Ease)) { it / 7 } },
     ) {
-        composable(Routes.HOME) {
-            HomeScreen(
+        composable(Routes.TRIPS) {
+            TripsScreen(
                 repo = repo,
-                onOpen = { nav.navigate(Routes.detail(it)) },
-                onAdd = { nav.navigate(Routes.edit()) },
-                onScan = { nav.navigate(Routes.edit(scan = true)) },
-                onTab = { nav.goTab(it) },
+                onOpen = { nav.navigate(Routes.trip(it)) },
+                onNew = { nav.navigate(Routes.CITY) },
+                onSettings = { nav.navigate(Routes.SETTINGS) },
             )
         }
-        composable(Routes.COMPARE) {
-            CompareScreen(
-                repo = repo,
-                onBack = { nav.goTab(Tab.HOME) },
-                onTab = { nav.goTab(it) },
-            )
-        }
-        composable(Routes.SETTINGS) {
-            SettingsScreen(repo = repo, onTab = { nav.goTab(it) })
+        composable(Routes.SETTINGS) { SettingsScreen(repo = repo, onBack = { nav.popBackStack() }) }
+        composable(Routes.CITY) {
+            CityScreen(onBack = { nav.popBackStack() }, onNext = { city, cur -> nav.navigate(Routes.dates(city, cur)) })
         }
         composable(
-            route = Routes.EDIT,
+            Routes.DATES,
+            arguments = listOf(navArgument("city") { type = NavType.StringType }, navArgument("currency") { type = NavType.StringType }),
+        ) { entry ->
+            DatesScreen(
+                repo = repo,
+                city = entry.arguments?.getString("city") ?: "",
+                currency = entry.arguments?.getString("currency") ?: "KRW",
+                onBack = { nav.popBackStack() },
+                onCreated = { id ->
+                    nav.navigate(Routes.trip(id)) { popUpTo(Routes.TRIPS) { inclusive = false } }
+                },
+            )
+        }
+        composable(Routes.TRIP, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            TripHomeScreen(
+                repo = repo, tripId = id,
+                onBack = { nav.popBackStack(Routes.TRIPS, inclusive = false) },
+                onTab = { nav.goTab(id, it) },
+                onAddPlace = { day -> nav.navigate(Routes.place(id, day = day)) },
+                onEditPlace = { itemId -> nav.navigate(Routes.place(id, itemId = itemId)) },
+            )
+        }
+        composable(
+            Routes.PLACE,
             arguments = listOf(
-                navArgument("tripId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                },
-                navArgument("scan") {
-                    type = NavType.BoolType
-                    defaultValue = false
-                },
+                navArgument("id") { type = NavType.StringType },
+                navArgument("itemId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("day") { type = NavType.IntType; defaultValue = 1 },
             ),
         ) { entry ->
-            EditScreen(
-                repo = repo,
-                tripId = entry.arguments?.getString("tripId"),
-                autoScan = entry.arguments?.getBoolean("scan") ?: false,
+            val id = entry.arguments?.getString("id") ?: return@composable
+            PlaceEditScreen(
+                repo = repo, tripId = id,
+                itemId = entry.arguments?.getString("itemId"),
+                initialDay = entry.arguments?.getInt("day") ?: 1,
                 onBack = { nav.popBackStack() },
-                onSaved = { nav.popBackStack() },
+            )
+        }
+        composable(Routes.LEDGER, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            LedgerScreen(
+                repo = repo, tripId = id,
+                onBack = { nav.goTab(id, Tab.PLAN) },
+                onTab = { nav.goTab(id, it) },
+                onAdd = { day -> nav.navigate(Routes.expense(id, day = day)) },
+                onEdit = { expId -> nav.navigate(Routes.expense(id, expId = expId)) },
             )
         }
         composable(
-            route = Routes.DETAIL,
-            arguments = listOf(navArgument("tripId") { type = NavType.StringType }),
+            Routes.EXPENSE,
+            arguments = listOf(
+                navArgument("id") { type = NavType.StringType },
+                navArgument("expId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("day") { type = NavType.IntType; defaultValue = 0 },
+            ),
         ) { entry ->
-            val id = entry.arguments?.getString("tripId") ?: return@composable
-            DetailScreen(
-                repo = repo,
-                tripId = id,
+            val id = entry.arguments?.getString("id") ?: return@composable
+            ExpenseEditScreen(
+                repo = repo, tripId = id,
+                expId = entry.arguments?.getString("expId"),
+                initialDay = entry.arguments?.getInt("day") ?: 0,
                 onBack = { nav.popBackStack() },
-                onEdit = { nav.navigate(Routes.edit(id)) },
-                onCompare = {
-                    repo.addCompare(id)
-                    nav.goTab(Tab.COMPARE)
-                },
             )
+        }
+        composable(Routes.CHECKS, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            ChecklistScreen(repo = repo, tripId = id, onBack = { nav.goTab(id, Tab.PLAN) }, onTab = { nav.goTab(id, it) })
+        }
+        composable(Routes.BOOKING, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            BookingScreen(repo = repo, tripId = id, onBack = { nav.goTab(id, Tab.PLAN) }, onTab = { nav.goTab(id, it) })
         }
     }
 }

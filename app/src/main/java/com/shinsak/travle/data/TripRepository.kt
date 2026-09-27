@@ -9,10 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.io.File
 
-/**
- * 앱 상태의 단일 출처. 파일 하나(travle.json)에 통째로 저장함.
- * 개인용이라 견적 수가 많아봐야 수십 개 → Room 없이 JSON으로 충분.
- */
+/** 앱 상태의 단일 출처. 파일 하나(travle.json)에 통째로 저장. */
 class TripRepository(context: Context) {
     private val file = File(context.filesDir, "travle.json")
     private val io = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -23,20 +20,13 @@ class TripRepository(context: Context) {
     private val _settings = MutableStateFlow(Settings())
     val settings: StateFlow<Settings> = _settings
 
-    /** 비교 화면에 올려둔 견적 id. 저장 안 함(세션용). */
-    private val _compare = MutableStateFlow<Set<String>>(emptySet())
-    val compare: StateFlow<Set<String>> = _compare
-
     init {
-        load()
-    }
-
-    private fun load() {
-        if (!file.exists()) return
-        runCatching {
-            val (t, s) = JsonStore.parseAll(file.readText())
-            _trips.value = t.sortedByDescending { it.updatedAt }
-            if (s != null) _settings.value = s
+        if (file.exists()) {
+            runCatching {
+                val (t, s) = JsonStore.parseAll(file.readText())
+                _trips.value = t.sortedByDescending { it.updatedAt }
+                if (s != null) _settings.value = s
+            }
         }
     }
 
@@ -62,15 +52,19 @@ class TripRepository(context: Context) {
         persist()
     }
 
+    /** 특정 여행만 변환해서 저장 */
+    fun update(id: String, transform: (Trip) -> Trip) {
+        val cur = trip(id) ?: return
+        upsert(transform(cur))
+    }
+
     fun delete(id: String) {
         _trips.value = _trips.value.filter { it.id != id }
-        _compare.value = _compare.value - id
         persist()
     }
 
     fun clearAll() {
         _trips.value = emptyList()
-        _compare.value = emptySet()
         persist()
     }
 
@@ -79,27 +73,14 @@ class TripRepository(context: Context) {
         persist()
     }
 
-    fun toggleCompare(id: String, max: Int = 4) {
-        val cur = _compare.value
-        _compare.value = when {
-            id in cur -> cur - id
-            cur.size >= max -> cur
-            else -> cur + id
-        }
-    }
-
-    fun addCompare(id: String, max: Int = 4) {
-        val cur = _compare.value
-        if (id in cur || cur.size >= max) return
-        _compare.value = cur + id
-    }
+    fun fxRate(currency: String): Double = if (currency == "KRW") 1.0 else (_settings.value.fxRates[currency] ?: 1.0)
 
     fun exportJson(): String = JsonStore.exportAll(_trips.value, _settings.value)
 
-    /** 같은 id는 덮어쓰고 나머지는 추가. 설정은 파일에 있으면 같이 덮어씀. 들여온 견적 수를 돌려줌. */
+    /** 같은 id는 덮어쓰고 나머지는 추가. 들여온 여행 수를 돌려줌. */
     fun importJson(text: String): Int {
         val (incoming, settings) = JsonStore.parseAll(text)
-        if (incoming.isEmpty() && settings == null) throw IllegalArgumentException("읽을 수 있는 견적이 없음")
+        if (incoming.isEmpty() && settings == null) throw IllegalArgumentException("읽을 수 있는 여행이 없음")
         val byId = _trips.value.associateBy { it.id }.toMutableMap()
         incoming.forEach { byId[it.id] = it }
         _trips.value = byId.values.sortedByDescending { it.updatedAt }
