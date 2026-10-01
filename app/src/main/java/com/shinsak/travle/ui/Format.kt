@@ -37,6 +37,16 @@ fun formatTyped(raw: String): String {
 
 fun parseAmount(s: String): Double = s.replace(",", "").trim().toDoubleOrNull() ?: 0.0
 
+/** 시간 입력 자동 정리: "0800" → "08:00", "930" → "09:30", "22:10+1" 유지 */
+fun formatTime(raw: String): String {
+    val plus = Regex("\\+\\d?$").find(raw)?.value ?: ""
+    val body = raw.removeSuffix(plus)
+    var d = body.filter { it.isDigit() }.take(4)
+    if (d.length >= 3 && d[0] > '2') d = "0$d".take(4)
+    val t = if (d.length <= 2) d else d.substring(0, 2) + ":" + d.substring(2)
+    return t + plus
+}
+
 fun parseIntSafe(s: String): Int = s.replace(",", "").trim().toIntOrNull() ?: 0
 
 /** 환율처럼 소수점 많은 값 → 불필요한 0 제거 */

@@ -48,6 +48,7 @@ import com.shinsak.travle.data.PlanItem
 import com.shinsak.travle.data.TripRepository
 import com.shinsak.travle.ui.askClaude
 import com.shinsak.travle.ui.components.AccentButton
+import com.shinsak.travle.ui.components.ChipRow
 import com.shinsak.travle.ui.components.ConfirmDialog
 import com.shinsak.travle.ui.components.InsetField
 import com.shinsak.travle.ui.components.NeuButton
@@ -57,6 +58,7 @@ import com.shinsak.travle.ui.components.RiseIn
 import com.shinsak.travle.ui.components.ScreenHeader
 import com.shinsak.travle.ui.components.SectionLabel
 import com.shinsak.travle.ui.components.Segmented
+import com.shinsak.travle.ui.formatTime
 import com.shinsak.travle.ui.openMap
 import com.shinsak.travle.ui.parseAmount
 import com.shinsak.travle.ui.theme.Neu
@@ -66,6 +68,8 @@ import com.shinsak.travle.ui.theme.pressable
 import com.shinsak.travle.ui.trimZeros
 import com.shinsak.travle.ui.won
 import kotlin.math.roundToLong
+
+private val TIME_CHIPS = listOf("08:00", "09:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00")
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -174,9 +178,12 @@ fun PlaceEditScreen(
                     }
                     Column(Modifier.width(110.dp)) {
                         SectionLabel("시간", modifier = Modifier.padding(start = 4.dp, bottom = 7.dp))
-                        InsetField(value = time, onValueChange = { time = it.filter { c -> c.isDigit() || c == ':' }.take(5) }, modifier = Modifier.fillMaxWidth(), height = 48.dp, placeholder = "09:30", keyboardType = KeyboardType.Number, textAlign = TextAlign.Center, fontSize = 15)
+                        InsetField(value = time, onValueChange = { time = formatTime(it) }, modifier = Modifier.fillMaxWidth(), height = 48.dp, placeholder = "09:30", keyboardType = KeyboardType.Number, textAlign = TextAlign.Center, fontSize = 15)
                     }
                 }
+            }
+            RiseIn(3) {
+                ChipRow(options = TIME_CHIPS, selected = TIME_CHIPS.indexOf(time), onSelect = { time = TIME_CHIPS[it] }, height = 34.dp)
             }
             if (!isMemo) {
                 RiseIn(4) {

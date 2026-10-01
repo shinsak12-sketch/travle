@@ -22,6 +22,8 @@ object JsonStore {
         val arr = root.optJSONArray("trips") ?: JSONArray()
         for (i in 0 until arr.length()) {
             val obj = arr.optJSONObject(i) ?: continue
+            // v1(견적 비교) 데이터는 구조가 달라서 건너뜀
+            if (obj.has("name") && !obj.has("city")) continue
             runCatching { tripFromJson(obj) }.getOrNull()?.let { trips.add(it) }
         }
         val settings = root.optJSONObject("settings")?.let { settingsFromJson(it) }

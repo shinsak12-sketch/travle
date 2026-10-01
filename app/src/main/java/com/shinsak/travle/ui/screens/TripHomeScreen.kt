@@ -57,6 +57,7 @@ import com.shinsak.travle.ui.components.NeuIconButton
 import com.shinsak.travle.ui.components.RiseIn
 import com.shinsak.travle.ui.components.SectionLabel
 import com.shinsak.travle.ui.components.Tab
+import com.shinsak.travle.ui.formatTime
 import com.shinsak.travle.ui.formatTyped
 import com.shinsak.travle.ui.icon
 import com.shinsak.travle.ui.manwon
@@ -67,6 +68,7 @@ import com.shinsak.travle.ui.theme.Neu
 import com.shinsak.travle.ui.theme.neuInset
 import com.shinsak.travle.ui.theme.neuRaised
 import com.shinsak.travle.ui.theme.pressable
+import com.shinsak.travle.ui.theme.pressableLong
 import com.shinsak.travle.ui.won
 import kotlin.math.min
 import kotlin.math.roundToLong
@@ -87,6 +89,7 @@ fun TripHomeScreen(
     var editTitle by remember { mutableStateOf(false) }
     var askDelete by remember { mutableStateOf(false) }
     var memoDay by remember { mutableStateOf<Int?>(null) }
+    var deletingItem by remember { mutableStateOf<PlanItem?>(null) }
 
     if (trip == null) {
         LaunchedEffect(Unit) { onBack() }
@@ -151,6 +154,7 @@ fun TripHomeScreen(
                         DaySection(
                             trip = trip, day = day, fx = { repo.fxRate(it) },
                             onEdit = onEditPlace,
+                            onLong = { item -> if (!item.auto) deletingItem = item },
                             onAddPlace = { onAddPlace(day) },
                             onAddMemo = { memoDay = day },
                             onOpenMap = { openMap(ctx, it) },
@@ -180,6 +184,13 @@ fun TripHomeScreen(
             repo.update(trip.id) { it.copy(items = it.items + PlanItem(dayIndex = day, isMemo = true, time = time, name = text)) }
             memoDay = null
         }
+    }
+    deletingItem?.let { item ->
+        ConfirmDialog(
+            title = "이 항목을 지울까요?", message = "\"${item.name}\"이 day ${item.dayIndex}에서 빠짐.", confirmText = "삭제", destructive = true,
+            onConfirm = { repo.update(trip.id) { t -> t.copy(items = t.items.filter { it.id != item.id }) }; deletingItem = null },
+            onDismiss = { deletingItem = null },
+        )
     }
     if (askDelete) {
         ConfirmDialog(
@@ -211,7 +222,7 @@ private fun StatChip(label: String, value: String, good: Boolean, modifier: Modi
 @Composable
 private fun DaySection(
     trip: Trip, day: Int, fx: (String) -> Double,
-    onEdit: (String) -> Unit, onAddPlace: () -> Unit, onAddMemo: () -> Unit, onOpenMap: (String) -> Unit,
+    onEdit: (String) -> Unit, onLong: (PlanItem) -> Unit, onAddPlace: () -> Unit, onAddMemo: () -> Unit, onOpenMap: (String) -> Unit,
 ) {
     val n = Neu
     val date = trip.dateOf(day)
@@ -230,7 +241,7 @@ private fun DaySection(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .pressable { onEdit(it.id) }
+                            .pressableLong(onLongClick = { onLong(it) }) { onEdit(it.id) }
                             .neuInset(radius = 18.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 4.dp, blur = 9.dp)
                             .padding(horizontal = 14.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -244,7 +255,7 @@ private fun DaySection(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .pressable { if (!it.auto) onEdit(it.id) }
+                            .pressableLong(onLongClick = { onLong(it) }) { if (!it.auto) onEdit(it.id) }
                             .neuRaised(radius = 18.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 5.dp, blur = 13.dp)
                             .padding(horizontal = 14.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -330,7 +341,7 @@ private fun MemoDialog(dayLabel: String, onDismiss: () -> Unit, onSave: (String,
             Text("$dayLabel 메모", color = n.ink, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                InsetField(value = time, onValueChange = { time = it.filter { c -> c.isDigit() || c == ':' }.take(5) }, modifier = Modifier.width(92.dp), placeholder = "09:30", keyboardType = KeyboardType.Number, textAlign = TextAlign.Center, fontSize = 14)
+                InsetField(value = time, onValueChange = { time = formatTime(it) }, modifier = Modifier.width(92.dp), placeholder = "09:30", keyboardType = KeyboardType.Number, textAlign = TextAlign.Center, fontSize = 14)
                 InsetField(value = text, onValueChange = { text = it }, modifier = Modifier.weight(1f), placeholder = "예) 디디 앱 미리 깔기", fontSize = 14)
             }
             Spacer(Modifier.height(18.dp))

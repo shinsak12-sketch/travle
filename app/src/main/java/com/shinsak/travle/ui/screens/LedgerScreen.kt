@@ -25,6 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,6 +43,7 @@ import com.shinsak.travle.data.Trip
 import com.shinsak.travle.data.TripRepository
 import com.shinsak.travle.data.settlementLabel
 import com.shinsak.travle.ui.components.BottomTabBar
+import com.shinsak.travle.ui.components.ConfirmDialog
 import com.shinsak.travle.ui.components.MoneyText
 import com.shinsak.travle.ui.components.NeuCard
 import com.shinsak.travle.ui.components.RiseIn
@@ -55,6 +58,7 @@ import com.shinsak.travle.ui.theme.Neu
 import com.shinsak.travle.ui.theme.neuInset
 import com.shinsak.travle.ui.theme.neuRaised
 import com.shinsak.travle.ui.theme.pressable
+import com.shinsak.travle.ui.theme.pressableLong
 import com.shinsak.travle.ui.trimZeros
 import com.shinsak.travle.ui.won
 import kotlin.math.min
@@ -72,6 +76,7 @@ fun LedgerScreen(
     val trips by repo.trips.collectAsStateWithLifecycle()
     val trip = trips.firstOrNull { it.id == tripId }
     var filter by rememberSaveable { mutableIntStateOf(0) } // 0 전체, 1 내가 낸 것, 2 카테고리별
+    var deleting by remember { mutableStateOf<Expense?>(null) }
 
     if (trip == null) {
         LaunchedEffect(Unit) { onBack() }
@@ -149,7 +154,7 @@ fun LedgerScreen(
                                     if (sum > 0) Text("· ${sum.manwon()}", color = n.ink2, fontSize = 11.5.sp, modifier = Modifier.padding(bottom = 1.dp))
                                 }
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    list.forEach { e -> ExpenseRow(e) { onEdit(e.id) } }
+                                    list.forEach { e -> ExpenseRow(e, onLong = { deleting = e }) { onEdit(e.id) } }
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -201,16 +206,24 @@ fun LedgerScreen(
 
         BottomTabBar(current = Tab.LEDGER, onSelect = onTab, modifier = Modifier.navigationBarsPadding())
     }
+
+    deleting?.let { e ->
+        ConfirmDialog(
+            title = "이 지출을 지울까요?", message = "\"${e.title.ifBlank { e.category.label }}\" ${e.krw.won()}원", confirmText = "삭제", destructive = true,
+            onConfirm = { repo.update(tripId) { t -> t.copy(expenses = t.expenses.filter { it.id != e.id }) }; deleting = null },
+            onDismiss = { deleting = null },
+        )
+    }
 }
 
 @Composable
-private fun ExpenseRow(e: Expense, onClick: () -> Unit) {
+private fun ExpenseRow(e: Expense, onLong: () -> Unit, onClick: () -> Unit) {
     val n = Neu
     val ci = ExpCategory.entries.indexOf(e.category)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .pressable(onClick = onClick)
+            .pressableLong(onLongClick = onLong, onClick = onClick)
             .neuRaised(radius = 18.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 5.dp, blur = 13.dp)
             .padding(horizontal = 14.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,

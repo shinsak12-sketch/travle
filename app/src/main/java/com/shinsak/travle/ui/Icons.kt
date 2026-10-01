@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Attractions
 import androidx.compose.material.icons.rounded.DirectionsCar
 import androidx.compose.material.icons.rounded.Flight
+import androidx.compose.material.icons.rounded.GolfCourse
 import androidx.compose.material.icons.rounded.Hotel
 import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.MoreHoriz
@@ -21,6 +22,7 @@ fun ExpCategory.icon(): ImageVector = when (this) {
     ExpCategory.FOOD -> Icons.Rounded.Restaurant
     ExpCategory.SHOPPING -> Icons.Rounded.ShoppingBag
     ExpCategory.SIGHT -> Icons.Rounded.Attractions
+    ExpCategory.GOLF -> Icons.Rounded.GolfCourse
     ExpCategory.ETC -> Icons.Rounded.MoreHoriz
 }
 
@@ -29,6 +31,7 @@ fun PlaceCategory.icon(): ImageVector = when (this) {
     PlaceCategory.FOOD -> Icons.Rounded.Restaurant
     PlaceCategory.CAFE -> Icons.Rounded.LocalCafe
     PlaceCategory.SHOPPING -> Icons.Rounded.ShoppingBag
+    PlaceCategory.GOLF -> Icons.Rounded.GolfCourse
     PlaceCategory.STAY -> Icons.Rounded.Hotel
     PlaceCategory.TRANSPORT -> Icons.Rounded.DirectionsCar
     PlaceCategory.ETC -> Icons.Rounded.Place
@@ -39,6 +42,7 @@ fun PlaceCategory.toExp(): ExpCategory = when (this) {
     PlaceCategory.SIGHT -> ExpCategory.SIGHT
     PlaceCategory.FOOD, PlaceCategory.CAFE -> ExpCategory.FOOD
     PlaceCategory.SHOPPING -> ExpCategory.SHOPPING
+    PlaceCategory.GOLF -> ExpCategory.GOLF
     PlaceCategory.STAY -> ExpCategory.STAY
     PlaceCategory.TRANSPORT -> ExpCategory.TRANSPORT
     PlaceCategory.ETC -> ExpCategory.ETC

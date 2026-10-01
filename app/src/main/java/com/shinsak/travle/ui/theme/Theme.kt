@@ -75,7 +75,7 @@ val LightNeu = NeuColors(
     accentShadow = Color(0x6612695E),
     chart = listOf(
         Color(0xFF12695E), Color(0xFF3F8F82), Color(0xFFA9540F),
-        Color(0xFFC98A3F), Color(0xFF6E7F6A), Color(0xFF9A8C72),
+        Color(0xFFC98A3F), Color(0xFF6E7F6A), Color(0xFF5B7DA8), Color(0xFF9A8C72),
     ),
     isDark = false,
 )
@@ -100,7 +100,7 @@ val DarkNeu = NeuColors(
     accentShadow = Color(0x553FA391),
     chart = listOf(
         Color(0xFF3FA391), Color(0xFF6BBFAF), Color(0xFFD9823B),
-        Color(0xFFE0A863), Color(0xFF8FA58A), Color(0xFFB3A48C),
+        Color(0xFFE0A863), Color(0xFF8FA58A), Color(0xFF86A6D1), Color(0xFFB3A48C),
     ),
     isDark = true,
 )

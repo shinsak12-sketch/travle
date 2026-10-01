@@ -6,12 +6,12 @@ import java.util.UUID
 
 /** 지출 카테고리. 순서가 차트 색 순서. */
 enum class ExpCategory(val label: String) {
-    STAY("숙소"), FLIGHT("항공"), TRANSPORT("교통"), FOOD("식비"), SHOPPING("쇼핑"), SIGHT("관광"), ETC("기타"),
+    STAY("숙소"), FLIGHT("항공"), TRANSPORT("교통"), FOOD("식비"), SHOPPING("쇼핑"), SIGHT("관광"), GOLF("골프"), ETC("기타"),
 }
 
 /** 일정 항목 카테고리 */
 enum class PlaceCategory(val label: String) {
-    SIGHT("관광"), FOOD("식당"), CAFE("카페"), SHOPPING("쇼핑"), STAY("숙소"), TRANSPORT("교통"), ETC("기타"),
+    SIGHT("관광"), FOOD("식당"), CAFE("카페"), SHOPPING("쇼핑"), GOLF("골프"), STAY("숙소"), TRANSPORT("교통"), ETC("기타"),
 }
 
 enum class PayMethod(val label: String) { CARD("카드"), CASH("현금"), ALIPAY("알리페이"), OTHER("기타") }

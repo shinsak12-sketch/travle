@@ -64,6 +64,7 @@ import com.shinsak.travle.ui.components.RiseIn
 import com.shinsak.travle.ui.components.ScreenHeader
 import com.shinsak.travle.ui.components.SectionLabel
 import com.shinsak.travle.ui.components.Tab
+import com.shinsak.travle.ui.formatTime
 import com.shinsak.travle.ui.formatTyped
 import com.shinsak.travle.ui.openMap
 import com.shinsak.travle.ui.parseAmount
@@ -80,7 +81,7 @@ private fun parseDuration(s: String): Int {
 }
 
 private fun durationText(min: Int): String = if (min <= 0) "" else "%d:%02d".format(min / 60, min % 60)
-private fun cleanTime(s: String): String = s.filter { it.isDigit() || it == ':' || it == '+' }.take(8)
+private fun cleanTime(s: String): String = formatTime(s)
 
 private val IN_TIMES = listOf("14:00", "15:00", "16:00", "18:00", "직접")
 private val OUT_TIMES = listOf("10:00", "11:00", "12:00", "직접")

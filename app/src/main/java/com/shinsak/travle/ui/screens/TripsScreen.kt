@@ -27,6 +27,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shinsak.travle.data.CITY_PRESETS
 import com.shinsak.travle.data.Trip
 import com.shinsak.travle.data.TripRepository
+import com.shinsak.travle.ui.components.ConfirmDialog
 import com.shinsak.travle.ui.components.InsetPanel
 import com.shinsak.travle.ui.components.NeuIconButton
 import com.shinsak.travle.ui.components.RiseIn
@@ -50,6 +54,7 @@ import com.shinsak.travle.ui.theme.neuInset
 import com.shinsak.travle.ui.theme.neuRaised
 import com.shinsak.travle.ui.theme.neuRaisedAccent
 import com.shinsak.travle.ui.theme.pressable
+import com.shinsak.travle.ui.theme.pressableLong
 import kotlin.math.min
 
 @Composable
@@ -65,6 +70,7 @@ fun TripsScreen(
     val past = trips.filter { it.isPast }.sortedByDescending { it.start }
     val featured = upcoming.firstOrNull()
     val rest = upcoming.drop(1)
+    var deleting by remember { mutableStateOf<Trip?>(null) }
 
     Column(Modifier.fillMaxSize().background(n.bg).statusBarsPadding()) {
         Row(Modifier.padding(horizontal = 22.dp).padding(top = 22.dp, bottom = 14.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -82,7 +88,7 @@ fun TripsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             if (featured != null) {
-                item { RiseIn(0) { FeaturedCard(featured) { onOpen(featured.id) } } }
+                item { RiseIn(0) { FeaturedCard(featured, onLong = { deleting = featured }) { onOpen(featured.id) } } }
             }
             item {
                 RiseIn(1) {
@@ -119,12 +125,13 @@ fun TripsScreen(
             }
             if (rest.isNotEmpty()) {
                 item { SectionLabel("다가오는 여행 · ${rest.size}", modifier = Modifier.padding(start = 4.dp, top = 4.dp)) }
-                items(rest, key = { it.id }) { t -> TripRow(t) { onOpen(t.id) } }
+                items(rest, key = { it.id }) { t -> TripRow(t, onLong = { deleting = t }) { onOpen(t.id) } }
             }
             if (past.isNotEmpty()) {
                 item { SectionLabel("지난 여행 · ${past.size}", modifier = Modifier.padding(start = 4.dp, top = 4.dp)) }
-                items(past, key = { it.id }) { t -> TripRow(t) { onOpen(t.id) } }
+                items(past, key = { it.id }) { t -> TripRow(t, onLong = { deleting = t }) { onOpen(t.id) } }
             }
+            item { Text("카드를 길게 누르면 삭제", color = n.hint, fontSize = 10.5.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(top = 6.dp)) }
         }
 
         Text(
@@ -133,10 +140,20 @@ fun TripsScreen(
             modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 14.dp),
         )
     }
+
+    deleting?.let { t ->
+        ConfirmDialog(
+            title = "이 여행을 지울까요?",
+            message = "\"${t.title.ifBlank { "${t.city} 여행" }}\"의 일정·가계부·체크리스트가 전부 삭제됨. 되돌릴 수 없음.",
+            confirmText = "삭제", destructive = true,
+            onConfirm = { repo.delete(t.id); deleting = null },
+            onDismiss = { deleting = null },
+        )
+    }
 }
 
 @Composable
-private fun FeaturedCard(t: Trip, onClick: () -> Unit) {
+private fun FeaturedCard(t: Trip, onLong: () -> Unit, onClick: () -> Unit) {
     val n = Neu
     val d = t.dDay
     val dLabel = when {
@@ -147,7 +164,7 @@ private fun FeaturedCard(t: Trip, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .pressable(onClick = onClick)
+            .pressableLong(onLongClick = onLong, onClick = onClick)
             .neuRaisedAccent(radius = 25.dp, fill = n.accent, shadow = n.accentShadow, light = n.shadowLight, offset = 8.dp, blur = 24.dp)
             .padding(horizontal = 20.dp, vertical = 18.dp),
     ) {
@@ -184,14 +201,14 @@ private fun Chip(text: String) {
 }
 
 @Composable
-private fun TripRow(t: Trip, onClick: () -> Unit) {
+private fun TripRow(t: Trip, onLong: () -> Unit, onClick: () -> Unit) {
     val n = Neu
     val code = CITY_PRESETS.firstOrNull { it.name == t.city }?.code ?: t.city.take(3).uppercase()
     val color = n.chart[(t.id.hashCode().let { if (it < 0) -it else it }) % n.chart.size]
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .pressable(onClick = onClick)
+            .pressableLong(onLongClick = onLong, onClick = onClick)
             .neuRaised(radius = 20.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 5.dp, blur = 13.dp)
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -51,6 +51,7 @@ import com.shinsak.travle.data.Expense
 import com.shinsak.travle.data.PayMethod
 import com.shinsak.travle.data.TripRepository
 import com.shinsak.travle.ui.components.AccentButton
+import com.shinsak.travle.ui.components.ChipRow
 import com.shinsak.travle.ui.components.ConfirmDialog
 import com.shinsak.travle.ui.components.InsetField
 import com.shinsak.travle.ui.components.NeuCard
@@ -62,6 +63,7 @@ import com.shinsak.travle.ui.components.SectionLabel
 import com.shinsak.travle.ui.components.Segmented
 import com.shinsak.travle.ui.formatTyped
 import com.shinsak.travle.ui.icon
+import com.shinsak.travle.ui.toExp
 import com.shinsak.travle.ui.parseAmount
 import com.shinsak.travle.ui.theme.Bricolage
 import com.shinsak.travle.ui.theme.Neu
@@ -97,7 +99,8 @@ fun ExpenseEditScreen(
     var amount by rememberSaveable { mutableStateOf(existing?.amount?.takeIf { it > 0 }?.let { if (existing.currency == "KRW") formatTyped(it.toLong().toString()) else it.trimZeros() } ?: "") }
     var currency by rememberSaveable { mutableStateOf(existing?.currency ?: trip.currency) }
     var day by rememberSaveable { mutableIntStateOf(existing?.dayIndex ?: initialDay) }
-    var method by rememberSaveable { mutableStateOf(existing?.method ?: if (trip.currency == "CNY") PayMethod.ALIPAY else PayMethod.CARD) }
+    val lastMethod = trip.expenses.filter { !it.id.startsWith("auto-") }.maxByOrNull { it.createdAt }?.method
+    var method by rememberSaveable { mutableStateOf(existing?.method ?: lastMethod ?: if (trip.currency == "CNY") PayMethod.ALIPAY else PayMethod.CARD) }
     var title by rememberSaveable { mutableStateOf(existing?.title ?: "") }
     var cat by rememberSaveable { mutableStateOf(existing?.category ?: ExpCategory.FOOD) }
     var paidBy by rememberSaveable { mutableStateOf(existing?.paidBy ?: me) }
@@ -196,15 +199,23 @@ fun ExpenseEditScreen(
                 Column {
                     SectionLabel("항목명", modifier = Modifier.padding(start = 4.dp, bottom = 7.dp))
                     InsetField(value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth(), placeholder = "예) 선양 고궁 입장 ×2", fontSize = 15)
+                    // 추천: 그날 일정의 장소 이름 + 최근 입력한 항목명
+                    val placeNames = trip.items.filter { it.dayIndex == day && !it.isMemo && !it.auto }.map { it.name to it.category.toExp() }
+                    val recent = trip.expenses.sortedByDescending { it.createdAt }.map { it.title to it.category }
+                    val suggestions = (placeNames + recent).filter { it.first.isNotBlank() }.distinctBy { it.first }.take(8)
+                    if (suggestions.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        ChipRow(options = suggestions.map { it.first }, selected = suggestions.indexOfFirst { it.first == title }, onSelect = { title = suggestions[it].first; cat = suggestions[it].second }, height = 34.dp)
+                    }
                 }
             }
             RiseIn(4) {
                 Column {
                     SectionLabel("카테고리", modifier = Modifier.padding(start = 4.dp, bottom = 7.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        ExpCategory.entries.forEach { c ->
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(ExpCategory.entries) { c ->
                             val on = c == cat
-                            Column(Modifier.weight(1f).pressable { cat = c }, horizontalAlignment = Alignment.CenterHorizontally) {
+                            Column(Modifier.width(54.dp).pressable { cat = c }, horizontalAlignment = Alignment.CenterHorizontally) {
                                 Box(
                                     Modifier
                                         .size(44.dp)

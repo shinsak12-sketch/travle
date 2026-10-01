@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.runtime.getValue
@@ -117,6 +118,18 @@ fun Modifier.neuInset(
             canvas.drawPath(ring, paint)
         }
     }
+}
+
+/** pressable + 길게 누르기 (삭제 등) */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+fun Modifier.pressableLong(onLongClick: () -> Unit, onClick: () -> Unit): Modifier = composed {
+    val src = remember { MutableInteractionSource() }
+    val pressed by src.collectIsPressedAsState()
+    val scale by animateFloatAsState(if (pressed) 0.975f else 1f, spring(stiffness = Spring.StiffnessMediumLow), label = "pressScale")
+    val sink by animateFloatAsState(if (pressed) 1f else 0f, spring(stiffness = Spring.StiffnessMediumLow), label = "pressSink")
+    this
+        .graphicsLayer { scaleX = scale; scaleY = scale; translationY = sink * 2.dp.toPx() }
+        .combinedClickable(interactionSource = src, indication = null, onClick = onClick, onLongClick = onLongClick)
 }
 
 /**
