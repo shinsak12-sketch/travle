@@ -20,6 +20,9 @@ class TripRepository(context: Context) {
     private val _settings = MutableStateFlow(Settings())
     val settings: StateFlow<Settings> = _settings
 
+    /** 가이드에서 고른 장소를 장소 추가 화면에 넘기는 임시 통로 */
+    val guidePick = MutableStateFlow<com.shinsak.travle.data.guides.GuidePlace?>(null)
+
     init {
         if (file.exists()) {
             runCatching {

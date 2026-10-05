@@ -145,7 +145,7 @@ fun SettingsScreen(repo: TripRepository, onBack: () -> Unit) {
                     contentAlignment = Alignment.Center,
                 ) { Text("전체 데이터 삭제", color = n.red, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold) }
             }
-            Text("Travle v2.0.0 · 오프라인 전용", color = n.ink2, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(top = 4.dp))
+            Text("Travle v2.1.0 · 오프라인 전용", color = n.ink2, fontSize = 10.sp, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(top = 4.dp))
         }
     }
 

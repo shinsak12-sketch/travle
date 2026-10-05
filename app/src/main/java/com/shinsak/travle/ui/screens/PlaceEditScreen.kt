@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.TravelExplore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,6 +47,7 @@ import com.shinsak.travle.data.CURRENCY_SYMBOL
 import com.shinsak.travle.data.PlaceCategory
 import com.shinsak.travle.data.PlanItem
 import com.shinsak.travle.data.TripRepository
+import com.shinsak.travle.data.guides.Guides
 import com.shinsak.travle.ui.askClaude
 import com.shinsak.travle.ui.components.AccentButton
 import com.shinsak.travle.ui.components.ChipRow
@@ -79,6 +81,7 @@ fun PlaceEditScreen(
     itemId: String?,
     initialDay: Int,
     onBack: () -> Unit,
+    onBrowse: () -> Unit = {},
 ) {
     val n = Neu
     val ctx = LocalContext.current
@@ -108,6 +111,24 @@ fun PlaceEditScreen(
 
     val rate = if (costCur == "KRW") 1.0 else (settings.fxRates[costCur] ?: 1.0)
     val costKrw = (parseAmount(cost) * rate).roundToLong()
+    val guide = remember(trip.city) { Guides.forCity(trip.city) }
+
+    // 가이드에서 고른 장소 받아서 채움
+    val picked by repo.guidePick.collectAsStateWithLifecycle()
+    LaunchedEffect(picked) {
+        val p = picked ?: return@LaunchedEffect
+        name = p.name
+        isMemo = false
+        cat = p.category
+        address = p.mapQuery
+        if (p.cost > 0) {
+            cost = p.cost.trimZeros()
+            costCur = guide?.currency ?: trip.currency
+        }
+        if (p.hoursNeeded > 0) hours = p.hoursNeeded.trimZeros()
+        note = listOf(p.hours, p.costNote, p.tip).filter { it.isNotBlank() }.joinToString(" · ")
+        repo.guidePick.value = null
+    }
 
     fun save() {
         if (name.isBlank()) return
@@ -138,7 +159,15 @@ fun PlaceEditScreen(
             RiseIn(0) {
                 Column {
                     SectionLabel("이름", modifier = Modifier.padding(start = 4.dp, bottom = 7.dp))
-                    InsetField(value = name, onValueChange = { name = it }, modifier = Modifier.fillMaxWidth(), placeholder = if (isMemo) "메모 내용" else "예) 선양 고궁", fontSize = 16)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        InsetField(value = name, onValueChange = { name = it }, modifier = Modifier.weight(1f), placeholder = if (isMemo) "메모 내용" else "예) 선양 고궁", fontSize = 16)
+                        if (guide != null && !isMemo) {
+                            NeuButton("찾아보기", onClick = onBrowse, height = 50.dp, radius = 17.dp, icon = Icons.Rounded.TravelExplore)
+                        }
+                    }
+                    if (guide != null && !isMemo) {
+                        Text("${guide.title} ${guide.places.size}곳 · 맛집·관광지·골프 골라서 바로 넣기", color = n.ink2, fontSize = 10.5.sp, modifier = Modifier.padding(start = 4.dp, top = 6.dp))
+                    }
                 }
             }
             RiseIn(1) {

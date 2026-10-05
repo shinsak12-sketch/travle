@@ -21,6 +21,7 @@ import com.shinsak.travle.ui.screens.ChecklistScreen
 import com.shinsak.travle.ui.screens.CityScreen
 import com.shinsak.travle.ui.screens.DatesScreen
 import com.shinsak.travle.ui.screens.ExpenseEditScreen
+import com.shinsak.travle.ui.screens.GuideScreen
 import com.shinsak.travle.ui.screens.LedgerScreen
 import com.shinsak.travle.ui.screens.PlaceEditScreen
 import com.shinsak.travle.ui.screens.SettingsScreen
@@ -38,6 +39,7 @@ object Routes {
     const val EXPENSE = "trip/{id}/expense?expId={expId}&day={day}"
     const val CHECKS = "trip/{id}/checks"
     const val BOOKING = "trip/{id}/booking"
+    const val GUIDE = "trip/{id}/guide"
 
     fun dates(city: String, currency: String) = "new/dates/${Uri.encode(city)}/$currency"
     fun trip(id: String) = "trip/$id"
@@ -46,6 +48,7 @@ object Routes {
     fun expense(id: String, expId: String? = null, day: Int = 0) = "trip/$id/expense?day=$day" + (expId?.let { "&expId=$it" } ?: "")
     fun checks(id: String) = "trip/$id/checks"
     fun booking(id: String) = "trip/$id/booking"
+    fun guide(id: String) = "trip/$id/guide"
 }
 
 private fun NavHostController.goTab(tripId: String, tab: Tab) {
@@ -126,6 +129,7 @@ fun TravleNavHost(repo: TripRepository) {
                 itemId = entry.arguments?.getString("itemId"),
                 initialDay = entry.arguments?.getInt("day") ?: 1,
                 onBack = { nav.popBackStack() },
+                onBrowse = { nav.navigate(Routes.guide(id)) },
             )
         }
         composable(Routes.LEDGER, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
@@ -152,6 +156,14 @@ fun TravleNavHost(repo: TripRepository) {
                 expId = entry.arguments?.getString("expId"),
                 initialDay = entry.arguments?.getInt("day") ?: 0,
                 onBack = { nav.popBackStack() },
+            )
+        }
+        composable(Routes.GUIDE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            GuideScreen(
+                repo = repo, tripId = id,
+                onBack = { nav.popBackStack() },
+                onPick = { p -> repo.guidePick.value = p; nav.popBackStack() },
             )
         }
         composable(Routes.CHECKS, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
