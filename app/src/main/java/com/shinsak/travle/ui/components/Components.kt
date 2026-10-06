@@ -38,6 +38,7 @@ import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.ConfirmationNumber
 import androidx.compose.material.icons.rounded.ContentPaste
+import androidx.compose.material.icons.rounded.MenuBook
 import androidx.compose.material.icons.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.Star
@@ -612,6 +613,7 @@ enum class Tab(val label: String, val icon: ImageVector) {
     LEDGER("가계부", Icons.Rounded.ReceiptLong),
     CHECK("체크", Icons.Rounded.Checklist),
     BOOKING("예약", Icons.Rounded.ConfirmationNumber),
+    INFO("정보", Icons.Rounded.MenuBook),
 }
 
 @Composable

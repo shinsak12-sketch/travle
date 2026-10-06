@@ -27,6 +27,9 @@ data class CityGuide(
     val currency: String,
     val note: String,
     val places: List<GuidePlace>,
+    /** 회화집 언어 코드 (Phrasebooks.forLanguage) */
+    val language: String = "",
+    val tips: List<TipSection> = emptyList(),
 )
 
 object Guides {

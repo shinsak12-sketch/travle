@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.PlaylistAdd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,9 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.shinsak.travle.data.CheckItem
+import com.shinsak.travle.data.defaultChecks
 import com.shinsak.travle.data.TripRepository
 import com.shinsak.travle.ui.askClaude
 import com.shinsak.travle.ui.components.BottomTabBar
+import com.shinsak.travle.ui.components.ChipRow
 import com.shinsak.travle.ui.components.Gauge
 import com.shinsak.travle.ui.components.InsetField
 import com.shinsak.travle.ui.components.NeuCard
@@ -49,7 +52,6 @@ import com.shinsak.travle.ui.components.NeuIconButton
 import com.shinsak.travle.ui.components.RiseIn
 import com.shinsak.travle.ui.components.ScreenHeader
 import com.shinsak.travle.ui.components.SectionLabel
-import com.shinsak.travle.ui.components.Segmented
 import com.shinsak.travle.ui.components.Tab
 import com.shinsak.travle.ui.theme.Bricolage
 import com.shinsak.travle.ui.theme.Neu
@@ -57,7 +59,7 @@ import com.shinsak.travle.ui.theme.neuInset
 import com.shinsak.travle.ui.theme.neuRaisedAccent
 import com.shinsak.travle.ui.theme.pressable
 
-private val GROUPS = listOf("출발 전", "짐", "현지")
+private val GROUPS = listOf("출발 전", "앱·결제", "짐", "골프", "현지", "귀국 전")
 
 @Composable
 fun ChecklistScreen(
@@ -99,7 +101,22 @@ fun ChecklistScreen(
             contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 14.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            val groups = (GROUPS + trip.checks.map { it.group }).distinct().filter { g -> trip.checks.any { it.group == g } || g in GROUPS.take(2) }
+            val groups = (GROUPS + trip.checks.map { it.group }).distinct().filter { g -> trip.checks.any { it.group == g } || g == GROUPS.first() }
+            val missing = defaultChecks(trip.city).filter { d -> trip.checks.none { it.text == d.text } }
+            if (missing.isNotEmpty()) item(key = "fill") {
+                RiseIn(0) {
+                    Row(
+                        Modifier.fillMaxWidth().pressable { repo.update(tripId) { t -> t.copy(checks = t.checks + missing) } }
+                            .neuInset(radius = 16.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 7.dp)
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Rounded.PlaylistAdd, contentDescription = null, tint = n.accent, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text("기본 항목 ${missing.size}개 더 채우기 (서류·앱·짐·골프·현지·귀국)", color = n.accent, fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
             groups.forEachIndexed { gi, g ->
                 val list = trip.checks.filter { it.group == g }
                 item(key = "g$g") {
@@ -125,7 +142,7 @@ fun ChecklistScreen(
             item {
                 RiseIn(3) {
                     Column {
-                        Segmented(options = GROUPS, selected = newGroup, onSelect = { newGroup = it }, modifier = Modifier.fillMaxWidth(), height = 34.dp)
+                        ChipRow(options = GROUPS, selected = newGroup, onSelect = { newGroup = it }, height = 32.dp)
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             InsetField(value = newText, onValueChange = { newText = it }, modifier = Modifier.weight(1f), placeholder = "항목 추가…", height = 44.dp, radius = 15.dp, fontSize = 13)

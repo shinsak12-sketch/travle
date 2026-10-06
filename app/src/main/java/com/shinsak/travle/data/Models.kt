@@ -233,14 +233,46 @@ val CITY_PRESETS = listOf(
 val CITY_REGIONS = listOf("전체", "중국", "일본", "대만·홍콩", "동남아")
 
 /** 중국행 기본 체크리스트 */
-fun defaultChecks(city: String): List<CheckItem> {
-    val china = CITY_PRESETS.firstOrNull { it.name == city }?.region == "중국" || city.contains("중국")
-    val before = mutableListOf("여권 유효기간 6개월 이상", "항공권 예약 · 스크린샷 저장", "숙소 예약 · 바우처 저장", "여행자보험", "eSIM 또는 로밍")
+fun defaultChecks(city: String, golf: Boolean = true): List<CheckItem> {
+    val china = CITY_PRESETS.firstOrNull { it.name == city }?.region == "중국" || city.contains("중국") || city.contains("선양") || city.contains("심양")
+    val docs = mutableListOf(
+        "여권 유효기간 6개월 이상",
+        "여권 사본·증명사진 폰에 저장",
+        "항공권 예약 · e티켓 스크린샷",
+        "숙소 예약 · 바우처 저장 (현지어 주소)",
+        "여행자보험 가입 · 긴급콜 번호 저장",
+        "공항 가는 교통 · 주차 예약",
+    )
+    if (china) docs.add(2, "무비자 입국 조건 확인 (기간·왕복권)")
+    if (golf) { docs.add("골프 티타임 예약 확인 (카트·캐디 포함 여부)"); docs.add("항공사에 골프백 위탁 사전 신청") }
+
+    val apps = mutableListOf("eSIM 또는 로밍 개통", "번역앱 오프라인 언어팩 다운로드", "현지 통화 소액 환전", "해외 결제 되는 카드 2장 이상", "트립닷컴 앱 · 예약 내역 확인")
     if (china) {
-        before.add(2, "무비자 입국 조건 확인 (15일 이내)")
-        before.add("알리페이 · 위챗페이 카드 연동")
-        before.add("VPN 설치 (카톡·구글 대비)")
+        apps.addAll(0, listOf("알리페이 설치 · 해외카드 연동 · 실명인증", "위챗 설치 (QR 주문·위챗페이)", "디디추싱 가입 또는 알리페이 안 디디 확인", "고덕지도(高德) 또는 바이두지도 설치", "VPN 설치 · 켜지는지 테스트"))
     }
-    val pack = listOf("멀티 어댑터", "현지 통화 현금 소액", "상비약", "보조배터리 (기내 반입)")
-    return before.map { CheckItem(group = "출발 전", text = it) } + pack.map { CheckItem(group = "짐", text = it) }
+
+    val pack = listOf(
+        "경량패딩 · 바람막이", "긴팔 · 긴바지 (일수+1)", "편한 운동화", "속옷·양말 (일수+1)", "세면도구 · 면도기",
+        "상비약 (소화제·지사제·감기약·진통제·밴드)", "멀티 어댑터", "보조배터리 (기내 반입)", "충전 케이블 · 충전기",
+        "휴지 · 물티슈 (식당 휴지 유료)", "손소독제 · 마스크", "선글라스 · 모자", "접이식 우산", "립밤 · 핸드크림", "작은 자물쇠 · 지퍼백",
+    )
+
+    val golfPack = listOf(
+        "골프백 · 항공 커버", "클럽 개수 확인 (14개 이내)", "골프화", "장갑 2켤레", "골프공 1더즌 이상", "티 · 볼마커 · 그린보수기",
+        "거리측정기 (충전)", "골프웨어 2세트 (칼라 셔츠)", "니트 조끼 · 바람막이", "레인웨어", "골프 모자", "썬크림",
+        "핫팩 (아침 추위)", "캐디팁 현금 (¥100–200)", "에너지바 · 물", "라운드 후 갈아입을 옷",
+    )
+
+    val local = mutableListOf("호텔 체크인 · 호텔 명함 받기 (현지어 주소)", "유심·eSIM 작동 확인", "택시 호출 1회 테스트", "환율 앱 확인 · 가계부 환율 입력", "생수 사두기", "영사관 번호 저장")
+    if (china) { local.add(2, "알리페이 결제 1회 테스트"); local.add(0, "입국카드 작성 · 지문 등록") }
+
+    val back = listOf("체크아웃 · 보증금 환불 확인", "충전기·세면도구 두고 온 것 확인", "기념품 세관 한도 확인", "남은 현지 통화 처리", "국제선 2.5시간 전 공항 도착") +
+        (if (golf) listOf("골프백 위탁 · 수하물 무게 확인") else emptyList())
+
+    return docs.map { CheckItem(group = "출발 전", text = it) } +
+        apps.map { CheckItem(group = "앱·결제", text = it) } +
+        pack.map { CheckItem(group = "짐", text = it) } +
+        (if (golf) golfPack.map { CheckItem(group = "골프", text = it) } else emptyList()) +
+        local.map { CheckItem(group = "현지", text = it) } +
+        back.map { CheckItem(group = "귀국 전", text = it) }
 }

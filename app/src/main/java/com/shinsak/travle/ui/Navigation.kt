@@ -22,6 +22,7 @@ import com.shinsak.travle.ui.screens.CityScreen
 import com.shinsak.travle.ui.screens.DatesScreen
 import com.shinsak.travle.ui.screens.ExpenseEditScreen
 import com.shinsak.travle.ui.screens.GuideScreen
+import com.shinsak.travle.ui.screens.InfoScreen
 import com.shinsak.travle.ui.screens.LedgerScreen
 import com.shinsak.travle.ui.screens.PlaceEditScreen
 import com.shinsak.travle.ui.screens.SettingsScreen
@@ -39,7 +40,8 @@ object Routes {
     const val EXPENSE = "trip/{id}/expense?expId={expId}&day={day}"
     const val CHECKS = "trip/{id}/checks"
     const val BOOKING = "trip/{id}/booking"
-    const val GUIDE = "trip/{id}/guide"
+    const val GUIDE = "trip/{id}/guide?editor={editor}"
+    const val INFO = "trip/{id}/info"
 
     fun dates(city: String, currency: String) = "new/dates/${Uri.encode(city)}/$currency"
     fun trip(id: String) = "trip/$id"
@@ -48,7 +50,8 @@ object Routes {
     fun expense(id: String, expId: String? = null, day: Int = 0) = "trip/$id/expense?day=$day" + (expId?.let { "&expId=$it" } ?: "")
     fun checks(id: String) = "trip/$id/checks"
     fun booking(id: String) = "trip/$id/booking"
-    fun guide(id: String) = "trip/$id/guide"
+    fun guide(id: String, editor: Boolean) = "trip/$id/guide?editor=$editor"
+    fun info(id: String) = "trip/$id/info"
 }
 
 private fun NavHostController.goTab(tripId: String, tab: Tab) {
@@ -57,6 +60,7 @@ private fun NavHostController.goTab(tripId: String, tab: Tab) {
         Tab.LEDGER -> Routes.ledger(tripId)
         Tab.CHECK -> Routes.checks(tripId)
         Tab.BOOKING -> Routes.booking(tripId)
+        Tab.INFO -> Routes.info(tripId)
     }
     if (tab == Tab.PLAN) {
         popBackStack(Routes.trip(tripId), inclusive = false)
@@ -129,7 +133,7 @@ fun TravleNavHost(repo: TripRepository) {
                 itemId = entry.arguments?.getString("itemId"),
                 initialDay = entry.arguments?.getInt("day") ?: 1,
                 onBack = { nav.popBackStack() },
-                onBrowse = { nav.navigate(Routes.guide(id)) },
+                onBrowse = { nav.navigate(Routes.guide(id, editor = true)) },
             )
         }
         composable(Routes.LEDGER, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
@@ -158,12 +162,28 @@ fun TravleNavHost(repo: TripRepository) {
                 onBack = { nav.popBackStack() },
             )
         }
-        composable(Routes.GUIDE, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+        composable(
+            Routes.GUIDE,
+            arguments = listOf(navArgument("id") { type = NavType.StringType }, navArgument("editor") { type = NavType.BoolType; defaultValue = true }),
+        ) { entry ->
             val id = entry.arguments?.getString("id") ?: return@composable
+            val fromEditor = entry.arguments?.getBoolean("editor") ?: true
             GuideScreen(
                 repo = repo, tripId = id,
                 onBack = { nav.popBackStack() },
-                onPick = { p -> repo.guidePick.value = p; nav.popBackStack() },
+                onPick = { p ->
+                    repo.guidePick.value = p
+                    if (fromEditor) nav.popBackStack() else nav.navigate(Routes.place(id, day = 1))
+                },
+            )
+        }
+        composable(Routes.INFO, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+            val id = entry.arguments?.getString("id") ?: return@composable
+            InfoScreen(
+                repo = repo, tripId = id,
+                onBack = { nav.goTab(id, Tab.PLAN) },
+                onTab = { nav.goTab(id, it) },
+                onGuide = { nav.navigate(Routes.guide(id, editor = false)) },
             )
         }
         composable(Routes.CHECKS, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->

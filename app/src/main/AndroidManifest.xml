@@ -8,6 +8,9 @@
 
     <!-- 클로드 앱·지도앱으로 넘기기 위한 패키지 가시성 (Android 11+) -->
     <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
         <package android:name="com.anthropic.claude" />
         <intent><action android:name="android.intent.action.SEND" /><data android:mimeType="text/plain" /></intent>
         <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="geo" /></intent>
