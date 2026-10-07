@@ -56,6 +56,8 @@ data class PlanItem(
     val costCurrency: String = "KRW",
     val hours: Double = 0.0,
     val note: String = "",
+    /** 다음 장소까지 이동 메모 (예: 택시 15분). 타임라인 연결선에 표시 */
+    val transit: String = "",
     /** 예약에서 자동 생성된 항공편 줄 (편집 불가, 예약 바꾸면 갱신) */
     val auto: Boolean = false,
 )

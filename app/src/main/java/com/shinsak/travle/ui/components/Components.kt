@@ -152,7 +152,7 @@ fun InsetPanel(
     val n = Neu
     Column(
         modifier = modifier
-            .neuInset(radius = radius, fill = n.bg, dark = n.shadowDark, light = n.shadowLight)
+            .neuInset(radius = radius, fill = n.well, dark = n.shadowDark, light = n.shadowLight)
             .padding(padding),
         content = content,
     )
@@ -175,7 +175,7 @@ fun NeuButton(
         modifier = modifier
             .height(height)
             .pressable(enabled = enabled, onClick = onClick)
-            .neuRaised(radius = radius, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 5.dp, blur = 12.dp)
+            .neuRaised(radius = radius, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 5.dp, blur = 12.dp)
             .padding(horizontal = 18.dp)
             .graphicsLayer { alpha = if (enabled) 1f else 0.5f },
         verticalAlignment = Alignment.CenterVertically,
@@ -235,7 +235,7 @@ fun NeuIconButton(
         modifier = modifier
             .size(size)
             .pressable(onClick = onClick)
-            .neuRaised(radius = radius, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 5.dp, blur = 12.dp),
+            .neuRaised(radius = radius, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 5.dp, blur = 12.dp),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(iconSize))
@@ -286,7 +286,7 @@ fun InsetField(
     Row(
         modifier = modifier
             .then(if (singleLine) Modifier.height(height) else Modifier)
-            .neuInset(radius = radius, fill = n.bg, dark = n.shadowDark, light = n.shadowLight)
+            .neuInset(radius = radius, fill = n.well, dark = n.shadowDark, light = n.shadowLight)
             .padding(horizontal = 14.dp, vertical = if (singleLine) 0.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -337,7 +337,7 @@ fun Segmented(
     val n = Neu
     Row(
         modifier = modifier
-            .neuInset(radius = 19.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight)
+            .neuInset(radius = 19.dp, fill = n.well, dark = n.shadowDark, light = n.shadowLight)
             .padding(5.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -456,12 +456,12 @@ fun ChipRow(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modif
                     .height(height)
                     .pressable { onSelect(i) }
                     .then(
-                        if (on) Modifier.neuRaised(radius = 13.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 8.dp)
-                        else Modifier.neuInset(radius = 13.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 7.dp)
+                        if (on) Modifier.neuRaised(radius = 13.dp, fill = n.ink, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 8.dp)
+                        else Modifier.neuRaised(radius = 13.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 2.dp, blur = 6.dp)
                     )
                     .padding(horizontal = 13.dp),
                 contentAlignment = Alignment.Center,
-            ) { Text(label, color = if (on) n.accent else n.ink2, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium, maxLines = 1) }
+            ) { Text(label, color = if (on) n.surface else n.ink2, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium, maxLines = 1) }
         }
     }
 }
@@ -624,7 +624,7 @@ fun BottomTabBar(current: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Mod
             .fillMaxWidth()
             .padding(horizontal = 18.dp)
             .padding(bottom = 14.dp, top = 8.dp)
-            .neuInset(radius = 27.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight)
+            .neuRaised(radius = 27.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 2.dp, blur = 10.dp)
             .padding(6.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -636,7 +636,7 @@ fun BottomTabBar(current: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Mod
                     .height(52.dp)
                     .pressable { onSelect(tab) }
                     .then(
-                        if (on) Modifier.neuRaised(radius = 22.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 4.dp, blur = 9.dp)
+                        if (on) Modifier.clip(RoundedCornerShape(18.dp)).background(n.accentTint)
                         else Modifier
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally,

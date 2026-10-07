@@ -1,5 +1,8 @@
 package com.shinsak.travle.ui.screens
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,6 +35,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,13 +51,14 @@ import com.shinsak.travle.data.TripRepository
 import com.shinsak.travle.data.settlementLabel
 import com.shinsak.travle.ui.components.BottomTabBar
 import com.shinsak.travle.ui.components.ConfirmDialog
+import com.shinsak.travle.ui.components.Ease
 import com.shinsak.travle.ui.components.MoneyText
 import com.shinsak.travle.ui.components.NeuCard
 import com.shinsak.travle.ui.components.RiseIn
 import com.shinsak.travle.ui.components.ScreenHeader
 import com.shinsak.travle.ui.components.SectionLabel
-import com.shinsak.travle.ui.components.StackedBar
 import com.shinsak.travle.ui.components.Tab
+import com.shinsak.travle.ui.color
 import com.shinsak.travle.ui.icon
 import com.shinsak.travle.ui.manwon
 import com.shinsak.travle.ui.theme.Bricolage
@@ -62,6 +70,7 @@ import com.shinsak.travle.ui.theme.pressableLong
 import com.shinsak.travle.ui.trimZeros
 import com.shinsak.travle.ui.won
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 @Composable
 fun LedgerScreen(
@@ -98,12 +107,12 @@ fun LedgerScreen(
                         .height(34.dp)
                         .pressable { filter = i }
                         .then(
-                            if (on) Modifier.neuRaised(radius = 12.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 8.dp)
-                            else Modifier.neuInset(radius = 12.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 7.dp)
+                            if (on) Modifier.neuRaised(radius = 12.dp, fill = n.ink, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 8.dp)
+                            else Modifier.neuRaised(radius = 12.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 2.dp, blur = 6.dp)
                         )
                         .padding(horizontal = 13.dp),
                     contentAlignment = Alignment.Center,
-                ) { Text(label, color = if (on) n.accent else n.ink2, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium) }
+                ) { Text(label, color = if (on) n.surface else n.ink2, fontSize = 12.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Medium) }
             }
         }
 
@@ -112,6 +121,9 @@ fun LedgerScreen(
             contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 14.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            item(key = "summary") {
+                RiseIn(0) { SummaryCard(trip) }
+            }
             if (filter == 2) {
                 item {
                     RiseIn(0) {
@@ -160,7 +172,7 @@ fun LedgerScreen(
                                             .fillMaxWidth()
                                             .height(42.dp)
                                             .pressable { onAdd(day) }
-                                            .neuInset(radius = 15.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 4.dp, blur = 9.dp),
+                                            .neuInset(radius = 15.dp, fill = n.surface.copy(alpha = 0.6f), dark = n.shadowDark, light = n.shadowLight, offset = 4.dp, blur = 9.dp),
                                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
                                     ) {
                                         Icon(Icons.Rounded.Add, contentDescription = null, tint = n.accent, modifier = Modifier.size(14.dp))
@@ -175,35 +187,6 @@ fun LedgerScreen(
             }
         }
 
-        Column(Modifier.padding(horizontal = 22.dp).padding(bottom = 8.dp)) {
-            NeuCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = 18.dp, vertical = 14.dp)) {
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Column {
-                        SectionLabel("총 지출")
-                        Spacer(Modifier.height(2.dp))
-                        MoneyText(trip.totalKrw, size = 26)
-                    }
-                    Spacer(Modifier.weight(1f))
-                    Column(horizontalAlignment = Alignment.End) {
-                        SectionLabel("1인당")
-                        Spacer(Modifier.height(4.dp))
-                        Text("${trip.perPersonKrw.won()}원", color = n.accent, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    }
-                }
-                val total = trip.totalKrw.toFloat().coerceAtLeast(1f)
-                val fractions = ExpCategory.entries.map { c -> trip.expenses.filter { it.category == c }.sumOf { it.krw } / total }
-                if (trip.totalKrw > 0) {
-                    Spacer(Modifier.height(10.dp))
-                    StackedBar(fractions = fractions, colors = n.chart, modifier = Modifier.fillMaxWidth(), height = 10.dp, delayMs = 150)
-                }
-                val settle = trip.settlementLabel()
-                if (settle.isNotBlank()) {
-                    Spacer(Modifier.height(6.dp))
-                    Text("정산: $settle", color = n.amber, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
-
         BottomTabBar(current = Tab.LEDGER, onSelect = onTab, modifier = Modifier.navigationBarsPadding())
     }
 
@@ -213,6 +196,86 @@ fun LedgerScreen(
             onConfirm = { repo.update(tripId) { t -> t.copy(expenses = t.expenses.filter { it.id != e.id }) }; deleting = null },
             onDismiss = { deleting = null },
         )
+    }
+}
+
+@Composable
+private fun SummaryCard(trip: Trip) {
+    val n = Neu
+    val total = trip.totalKrw
+    val byCat = ExpCategory.entries.map { c -> c to trip.expenses.filter { it.category == c }.sumOf { it.krw } }.filter { it.second > 0 }.sortedByDescending { it.second }
+    val capFrac = if (trip.budgetCap > 0) total.toFloat() / trip.budgetCap else 0f
+    NeuCard(modifier = Modifier.fillMaxWidth(), padding = PaddingValues(horizontal = 18.dp, vertical = 16.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column {
+                Text("총 지출 · 예산 ${trip.budgetCap.manwon()}", color = n.ink2, fontSize = 11.sp)
+                Spacer(Modifier.height(2.dp))
+                MoneyText(total, size = 28)
+            }
+            Spacer(Modifier.weight(1f))
+            Column(horizontalAlignment = Alignment.End) {
+                Text("1인당", color = n.ink2, fontSize = 11.sp)
+                Spacer(Modifier.height(4.dp))
+                Text("${trip.perPersonKrw.won()}원", color = n.ink, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+            }
+        }
+        if (total > 0) {
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Donut(byCat.map { it.second.toFloat() / total }, byCat.map { it.first.color(n) }, size = 84.dp, stroke = 14.dp, center = "${(capFrac * 100).roundToInt()}%")
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    byCat.take(5).forEach { (c, v) ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(c.color(n)))
+                            Spacer(Modifier.width(7.dp))
+                            Text(c.label, color = n.ink, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                            Text("${v * 100 / total}%", color = n.hint, fontSize = 10.5.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(v.manwon(), color = n.ink, fontFamily = Bricolage, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+        } else {
+            Spacer(Modifier.height(8.dp))
+            Text("아직 지출 없음. 아래 '비용 추가'로 시작.", color = n.hint, fontSize = 12.sp)
+        }
+        val settle = trip.settlementLabel()
+        if (settle.isNotBlank()) {
+            Spacer(Modifier.height(12.dp))
+            Row(
+                Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp)).background(n.accentTint).padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("정산", color = n.accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(10.dp))
+                Text(settle, color = n.accentDeep, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** 카테고리 비중 도넛. 그려지는 애니메이션. */
+@Composable
+private fun Donut(fractions: List<Float>, colors: List<androidx.compose.ui.graphics.Color>, size: androidx.compose.ui.unit.Dp, stroke: androidx.compose.ui.unit.Dp, center: String) {
+    val n = Neu
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(fractions) { progress.snapTo(0f); progress.animateTo(1f, tween(900, delayMillis = 120, easing = Ease)) }
+    Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val sw = stroke.toPx()
+            val inset = sw / 2
+            val arcSize = Size(this.size.width - sw, this.size.height - sw)
+            drawArc(n.well, 0f, 360f, false, topLeft = Offset(inset, inset), size = arcSize, style = Stroke(sw))
+            var start = -90f
+            val gap = 2.5f
+            fractions.forEachIndexed { i, f ->
+                val sweep = (f * 360f * progress.value - gap).coerceAtLeast(0f)
+                if (sweep > 0f) drawArc(colors[i % colors.size], start, sweep, false, topLeft = Offset(inset, inset), size = arcSize, style = Stroke(sw, cap = StrokeCap.Round))
+                start += f * 360f * progress.value
+            }
+        }
+        Text(center, color = n.ink, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
     }
 }
 

@@ -14,6 +14,8 @@ import androidx.compose.material.icons.rounded.ShoppingBag
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.shinsak.travle.data.ExpCategory
 import com.shinsak.travle.data.PlaceCategory
+import com.shinsak.travle.ui.theme.NeuColors
+import androidx.compose.ui.graphics.Color
 
 fun ExpCategory.icon(): ImageVector = when (this) {
     ExpCategory.STAY -> Icons.Rounded.Hotel
@@ -46,4 +48,13 @@ fun PlaceCategory.toExp(): ExpCategory = when (this) {
     PlaceCategory.STAY -> ExpCategory.STAY
     PlaceCategory.TRANSPORT -> ExpCategory.TRANSPORT
     PlaceCategory.ETC -> ExpCategory.ETC
+}
+
+/** 지출 카테고리 색 (테마 chart 리스트는 ExpCategory 순서) */
+fun ExpCategory.color(n: NeuColors): Color = n.chart[ordinal % n.chart.size]
+
+/** 장소 카테고리 색 = 대응하는 지출 카테고리 색. 카페는 노랑 계열로 분리. */
+fun PlaceCategory.color(n: NeuColors): Color = when (this) {
+    PlaceCategory.CAFE -> if (n.isDark) Color(0xFFFACC15) else Color(0xFFEAB308)
+    else -> toExp().color(n)
 }

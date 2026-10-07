@@ -81,7 +81,7 @@ object JsonStore {
     private fun itemToJson(p: PlanItem) = JSONObject().apply {
         put("id", p.id); put("dayIndex", p.dayIndex); put("isMemo", p.isMemo); put("time", p.time); put("name", p.name)
         put("category", p.category.name); put("address", p.address); put("mapLink", p.mapLink); put("cost", p.cost)
-        put("costCurrency", p.costCurrency); put("hours", p.hours); put("note", p.note); put("auto", p.auto)
+        put("costCurrency", p.costCurrency); put("hours", p.hours); put("note", p.note); put("transit", p.transit); put("auto", p.auto)
     }
 
     private fun itemFromJson(o: JSONObject) = PlanItem(
@@ -96,6 +96,7 @@ object JsonStore {
         cost = o.optDouble("cost", 0.0),
         costCurrency = o.optString("costCurrency", "KRW").ifBlank { "KRW" },
         hours = o.optDouble("hours", 0.0),
+        transit = o.optString("transit", ""),
         note = o.optString("note"),
         auto = o.optBoolean("auto", false),
     )

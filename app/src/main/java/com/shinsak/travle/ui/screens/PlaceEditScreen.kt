@@ -71,6 +71,7 @@ import com.shinsak.travle.ui.trimZeros
 import com.shinsak.travle.ui.won
 import kotlin.math.roundToLong
 
+private val TRANSIT_CHIPS = listOf("도보 5분", "도보 10분", "택시 15분", "택시 30분", "지하철 20분", "디디 예약")
 private val TIME_CHIPS = listOf("08:00", "09:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00")
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -107,6 +108,7 @@ fun PlaceEditScreen(
     var costCur by rememberSaveable { mutableStateOf(existing?.costCurrency ?: trip.currency) }
     var hours by rememberSaveable { mutableStateOf(existing?.hours?.takeIf { it > 0 }?.trimZeros() ?: "") }
     var note by rememberSaveable { mutableStateOf(existing?.note ?: "") }
+    var transit by rememberSaveable { mutableStateOf(existing?.transit ?: "") }
     var askDelete by remember { mutableStateOf(false) }
 
     val rate = if (costCur == "KRW") 1.0 else (settings.fxRates[costCur] ?: 1.0)
@@ -135,7 +137,7 @@ fun PlaceEditScreen(
         val item = PlanItem(
             id = existing?.id ?: PlanItem().id, dayIndex = day, isMemo = isMemo, time = time.trim(), name = name.trim(),
             category = cat, address = address.trim(), mapLink = mapLink.trim(), cost = parseAmount(cost), costCurrency = costCur,
-            hours = parseAmount(hours), note = note.trim(),
+            hours = parseAmount(hours), note = note.trim(), transit = transit.trim(),
         )
         repo.update(tripId) { t -> t.copy(items = t.items.filter { it.id != item.id } + item) }
         onBack()
@@ -259,6 +261,14 @@ fun PlaceEditScreen(
                 Column {
                     SectionLabel("메모", modifier = Modifier.padding(start = 4.dp, bottom = 7.dp))
                     InsetField(value = note, onValueChange = { note = it }, modifier = Modifier.fillMaxWidth(), placeholder = "휴관일, 결제 방법, 팁 같은 것", singleLine = false, fontSize = 13)
+                }
+            }
+            if (!isMemo) RiseIn(7) {
+                Column {
+                    SectionLabel("다음 장소까지 이동 (선택)", modifier = Modifier.padding(start = 4.dp, bottom = 7.dp))
+                    InsetField(value = transit, onValueChange = { transit = it }, modifier = Modifier.fillMaxWidth(), height = 46.dp, placeholder = "예) 택시 15분 · 지하철 2호선 30분", fontSize = 13)
+                    Spacer(Modifier.height(8.dp))
+                    ChipRow(options = TRANSIT_CHIPS, selected = TRANSIT_CHIPS.indexOf(transit), onSelect = { transit = TRANSIT_CHIPS[it] }, height = 32.dp)
                 }
             }
         }

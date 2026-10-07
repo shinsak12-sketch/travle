@@ -15,7 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -26,7 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -59,7 +64,10 @@ import com.shinsak.travle.ui.components.SectionLabel
 import com.shinsak.travle.ui.components.Tab
 import com.shinsak.travle.ui.formatTime
 import com.shinsak.travle.ui.formatTyped
+import com.shinsak.travle.ui.color
 import com.shinsak.travle.ui.icon
+import com.shinsak.travle.ui.trimZeros
+import com.shinsak.travle.data.CURRENCY_SYMBOL
 import com.shinsak.travle.ui.manwon
 import com.shinsak.travle.ui.openMap
 import com.shinsak.travle.ui.parseAmount
@@ -143,29 +151,63 @@ fun TripHomeScreen(
             Gauge(fraction = capFrac, color = if (capFrac > 1f) n.red else n.accent, modifier = Modifier.fillMaxWidth(), height = 10.dp, delayMs = 150)
         }
 
+        // Day 스위처
+        var day by rememberSaveable(trip.id) { mutableIntStateOf(initialDay(trip)) }
+        Row(Modifier.padding(horizontal = 22.dp).padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (d in 1..trip.days) {
+                val on = d == day
+                val date = trip.dateOf(d)
+                val cnt = trip.items.count { it.dayIndex == d }
+                Column(
+                    modifier = Modifier.weight(1f)
+                        .pressable { day = d }
+                        .neuRaised(radius = 13.dp, fill = if (on) n.ink else n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 2.dp, blur = 7.dp)
+                        .padding(vertical = 7.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("${date.monthValue}.${date.dayOfMonth} ${Trip.dow(date)}", color = if (on) n.surface.copy(alpha = 0.75f) else n.ink2, fontSize = 9.5.sp, maxLines = 1)
+                    Text("Day $d", color = if (on) n.surface else n.ink, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, maxLines = 1)
+                    if (cnt > 0) Text("$cnt", color = if (on) n.surface.copy(alpha = 0.75f) else n.hint, fontSize = 9.sp)
+                }
+            }
+        }
+
+        val items = trip.items.forDay(day)
+        val dayCost = items.filter { !it.isMemo && it.cost > 0 }.sumOf { it.cost * repo.fxRate(it.costCurrency) } * trip.people
         LazyColumn(
             modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 14.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 12.dp),
         ) {
-            for (day in 1..trip.days) {
-                item(key = "day$day") {
-                    RiseIn(min(day - 1, 6)) {
-                        DaySection(
-                            trip = trip, day = day, fx = { repo.fxRate(it) },
-                            onEdit = onEditPlace,
-                            onLong = { item -> if (!item.auto) deletingItem = item },
-                            onAddPlace = { onAddPlace(day) },
-                            onAddMemo = { memoDay = day },
-                            onOpenMap = { openMap(ctx, it) },
-                        )
+            item(key = "head$day") {
+                Row(Modifier.padding(start = 4.dp, bottom = 8.dp), verticalAlignment = Alignment.Bottom) {
+                    Text("${items.count { !it.isMemo }}곳 · 메모 ${items.count { it.isMemo }}", color = n.ink2, fontSize = 11.sp)
+                    Spacer(Modifier.weight(1f))
+                    if (dayCost > 0) Text("예상 ${dayCost.roundToLong().manwon()} (${trip.people}명)", color = n.ink2, fontSize = 11.sp)
+                }
+            }
+            itemsIndexed(items, key = { _, it -> it.id }) { i, it ->
+                RiseIn(min(i, 6)) {
+                    TimelineRow(
+                        item = it, isLast = i == items.lastIndex,
+                        onEdit = { if (!it.auto) onEditPlace(it.id) },
+                        onLong = { if (!it.auto) deletingItem = it },
+                        onOpenMap = { openMap(ctx, it.mapLink.ifBlank { it.address }) },
+                        onAsk = { askClaude(ctx, "${trip.city} \"${it.name}\" 지금 운영시간, 가격, 가는 방법, 주의할 점 알려줘.") },
+                    )
+                }
+            }
+            item(key = "add$day") {
+                RiseIn(min(items.size, 6)) {
+                    Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AddRow("장소 추가", n.accent, Modifier.weight(1f)) { onAddPlace(day) }
+                        AddRow("메모 추가", n.ink2, Modifier.weight(1f)) { memoDay = day }
                     }
                 }
             }
             item {
                 Text(
                     "여행 삭제", color = n.red, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().pressable { askDelete = true }.padding(vertical = 10.dp),
+                    modifier = Modifier.fillMaxWidth().pressable { askDelete = true }.padding(top = 18.dp, bottom = 6.dp),
                 )
             }
         }
@@ -219,75 +261,91 @@ private fun StatChip(label: String, value: String, good: Boolean, modifier: Modi
     }
 }
 
+/** 오늘이 여행 중이면 그 날, 아니면 Day 1 */
+private fun initialDay(trip: Trip): Int {
+    val today = java.time.LocalDate.now()
+    for (d in 1..trip.days) if (trip.dateOf(d) == today) return d
+    return 1
+}
+
 @Composable
-private fun DaySection(
-    trip: Trip, day: Int, fx: (String) -> Double,
-    onEdit: (String) -> Unit, onLong: (PlanItem) -> Unit, onAddPlace: () -> Unit, onAddMemo: () -> Unit, onOpenMap: (String) -> Unit,
-) {
+private fun TimelineRow(item: PlanItem, isLast: Boolean, onEdit: () -> Unit, onLong: () -> Unit, onOpenMap: () -> Unit, onAsk: () -> Unit) {
     val n = Neu
-    val date = trip.dateOf(day)
-    val items = trip.items.forDay(day)
-    Column {
-        Row(Modifier.padding(horizontal = 4.dp, vertical = 0.dp).padding(bottom = 8.dp), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("day $day", color = n.ink, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 17.sp)
-            Text("${date.monthValue}.${date.dayOfMonth} ${Trip.dow(date)}", color = n.ink2, fontSize = 12.sp, modifier = Modifier.padding(bottom = 1.dp))
-            Spacer(Modifier.weight(1f))
-            val dayCost = items.filter { !it.isMemo && it.cost > 0 }.sumOf { it.cost * fx(it.costCurrency) } * trip.people
-            if (dayCost > 0) Text("예상 ${dayCost.roundToLong().manwon()}", color = n.ink2, fontSize = 10.5.sp, modifier = Modifier.padding(bottom = 1.dp))
+    val dot = if (item.isMemo) n.hint else if (item.auto) n.chart[1] else item.category.color(n)
+    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+        // 선 + 점
+        Box(Modifier.width(22.dp).fillMaxHeight()) {
+            Box(Modifier.align(Alignment.TopCenter).padding(top = 22.dp).width(2.dp).fillMaxHeight().background(if (isLast) androidx.compose.ui.graphics.Color.Transparent else n.line))
+            Box(Modifier.align(Alignment.TopCenter).padding(top = 16.dp).size(12.dp).clip(RoundedCornerShape(6.dp)).background(n.bg).padding(2.dp).clip(RoundedCornerShape(5.dp)).background(dot))
         }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            items.forEach { it ->
-                if (it.isMemo) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pressableLong(onLongClick = { onLong(it) }) { onEdit(it.id) }
-                            .neuInset(radius = 18.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 4.dp, blur = 9.dp)
-                            .padding(horizontal = 14.dp, vertical = 11.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Text(it.time.ifBlank { "—" }, color = n.hint, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, modifier = Modifier.width(46.dp))
-                        Text(it.name, color = n.ink, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                        Text("메모", color = n.hint, fontSize = 10.5.sp)
+        Column(Modifier.weight(1f).padding(start = 6.dp, bottom = if (item.transit.isNotBlank()) 0.dp else 10.dp)) {
+            if (item.isMemo) {
+                Row(
+                    modifier = Modifier.fillMaxWidth()
+                        .pressableLong(onLongClick = onLong, onClick = onEdit)
+                        .neuInset(radius = 14.dp, fill = n.surface.copy(alpha = 0.55f), dark = n.shadowDark, light = n.shadowLight)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(item.time.ifBlank { "—" }, color = n.hint, fontFamily = Bricolage, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.width(40.dp))
+                    Text(item.name, color = n.ink2, fontSize = 12.5.sp, modifier = Modifier.weight(1f))
+                }
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                        .pressableLong(onLongClick = onLong, onClick = onEdit)
+                        .neuRaised(radius = 16.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 3.dp, blur = 12.dp)
+                        .padding(horizontal = 12.dp, vertical = 11.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(item.time.ifBlank { "—" }, color = n.ink, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp, modifier = Modifier.width(40.dp))
+                        Box(Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(dot.copy(alpha = 0.14f)), contentAlignment = Alignment.Center) {
+                            Icon(item.category.icon(), contentDescription = null, tint = dot, modifier = Modifier.size(15.dp))
+                        }
+                        Text(item.name, color = n.ink, fontSize = 13.5.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.weight(1f))
+                        Text(if (item.auto) "항공" else item.category.label, color = dot, fontSize = 9.5.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)).background(dot.copy(alpha = 0.12f)).padding(horizontal = 6.dp, vertical = 2.dp))
                     }
-                } else {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .pressableLong(onLongClick = { onLong(it) }) { if (!it.auto) onEdit(it.id) }
-                            .neuRaised(radius = 18.dp, fill = n.surface, dark = n.shadowDark, light = n.shadowLight, offset = 5.dp, blur = 13.dp)
-                            .padding(horizontal = 14.dp, vertical = 11.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Text(it.time.ifBlank { "—" }, color = n.accent, fontFamily = Bricolage, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, modifier = Modifier.width(46.dp))
-                        Box(Modifier.size(30.dp).clip(RoundedCornerShape(10.dp)).background(if (it.auto) n.accentTint else n.well), contentAlignment = Alignment.Center) {
-                            Icon(it.category.icon(), contentDescription = null, tint = if (it.auto) n.accent else n.amber, modifier = Modifier.size(15.dp))
+                    // 정보 줄: 요금 · 소요 · 운영시간/메모 · 주소
+                    val facts = buildList {
+                        if (item.cost > 0) add(if (item.costCurrency == "KRW") "${item.cost.roundToLong().won()}원" else "${CURRENCY_SYMBOL[item.costCurrency] ?: ""}${item.cost.trimZeros()}")
+                        if (item.hours > 0) add("${item.hours.trimZeros()}시간")
+                    }
+                    if (facts.isNotEmpty() || item.note.isNotBlank() || item.address.isNotBlank()) {
+                        Spacer(Modifier.height(6.dp))
+                        Column(Modifier.padding(start = 50.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            if (facts.isNotEmpty()) Text(facts.joinToString("  ·  "), color = n.ink, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
+                            if (item.note.isNotBlank()) Text(item.note, color = n.ink2, fontSize = 11.5.sp, lineHeight = 16.sp, maxLines = 4)
+                            if (item.address.isNotBlank()) Text("📍 ${item.address}", color = n.hint, fontSize = 10.5.sp, maxLines = 1)
                         }
-                        Column(Modifier.weight(1f)) {
-                            Text(it.name, color = n.ink, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-                            val sub = buildList {
-                                if (!it.auto) add(it.category.label)
-                                if (it.cost > 0) add("${com.shinsak.travle.data.CURRENCY_SYMBOL[it.costCurrency] ?: ""}${it.cost.let { c -> if (c == Math.floor(c)) c.toLong().toString() else c.toString() }}")
-                                if (it.hours > 0) add("${it.hours.let { h -> if (h == Math.floor(h)) h.toLong().toString() else h.toString() }}시간")
-                                if (it.note.isNotBlank()) add(it.note)
-                            }.joinToString(" · ")
-                            if (sub.isNotBlank()) Text(sub, color = n.ink2, fontSize = 11.sp, maxLines = 1, modifier = Modifier.padding(top = 1.dp))
-                        }
-                        if (it.mapLink.isNotBlank() || it.address.isNotBlank()) {
-                            Box(Modifier.size(32.dp).pressable { onOpenMap(it.mapLink.ifBlank { it.address }) }, contentAlignment = Alignment.Center) {
-                                Icon(Icons.Rounded.Map, contentDescription = "지도 열기", tint = n.hint, modifier = Modifier.size(18.dp))
-                            }
+                    }
+                    if (!item.auto) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(Modifier.padding(start = 50.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            if (item.mapLink.isNotBlank() || item.address.isNotBlank()) MiniAction("지도", Icons.Rounded.Map, onOpenMap)
+                            MiniAction("물어보기", Icons.Rounded.AutoAwesome, onAsk)
                         }
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AddRow("장소 추가", n.accent, Modifier.weight(1f), onAddPlace)
-                AddRow("메모 추가", n.ink2, Modifier.weight(1f), onAddMemo)
+            if (item.transit.isNotBlank() && !isLast) {
+                Text("↓ ${item.transit}", color = n.ink2, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 10.dp, top = 6.dp, bottom = 8.dp))
+            } else if (item.transit.isNotBlank()) {
+                Spacer(Modifier.height(10.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun MiniAction(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+    val n = Neu
+    Row(
+        modifier = Modifier.height(26.dp).pressable(onClick = onClick).clip(RoundedCornerShape(8.dp)).background(n.well).padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = n.ink2, modifier = Modifier.size(12.dp))
+        Text(text, color = n.ink2, fontSize = 10.5.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -298,7 +356,7 @@ private fun AddRow(text: String, color: androidx.compose.ui.graphics.Color, modi
         modifier = modifier
             .height(42.dp)
             .pressable(onClick = onClick)
-            .neuInset(radius = 15.dp, fill = n.bg, dark = n.shadowDark, light = n.shadowLight, offset = 4.dp, blur = 9.dp),
+            .neuInset(radius = 14.dp, fill = n.surface.copy(alpha = 0.6f), dark = n.shadowDark, light = n.shadowLight),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
