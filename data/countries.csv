@@ -1,0 +1,235 @@
+﻿code,name_en,name_ko,continent,continent_ko,city_count,airport_count,large_airport_cities
+GH,Ghana,가나,AF,아프리카,5,5,3
+GA,Gabon,가봉,AF,아프리카,6,6,2
+GM,Gambia,감비아,AF,아프리카,1,1,1
+GN,Guinea,기니,AF,아프리카,1,1,1
+GW,Guinea-Bissau,기니비사우,AF,아프리카,1,1,1
+NA,Namibia,나미비아,AF,아프리카,8,9,2
+NG,Nigeria,나이지리아,AF,아프리카,23,24,11
+SS,South Sudan,남수단,AF,아프리카,3,3,1
+ZA,South Africa,남아프리카 공화국,AF,아프리카,21,22,10
+NE,Niger,니제르,AF,아프리카,2,2,1
+LR,Liberia,라이베리아,AF,아프리카,1,2,1
+LS,Lesotho,레소토,AF,아프리카,1,1,1
+RE,Réunion,레위니옹,AF,아프리카,2,2,2
+RW,Rwanda,르완다,AF,아프리카,2,2,1
+LY,Libya,리비아,AF,아프리카,7,7,3
+MG,Madagascar,마다가스카르,AF,아프리카,16,16,4
+YT,Mayotte,마요트,AF,아프리카,1,1,1
+MW,Malawi,말라위,AF,아프리카,2,2,2
+ML,Mali,말리,AF,아프리카,5,5,2
+MA,Morocco,모로코,AF,아프리카,17,17,12
+MU,Mauritius,모리셔스,AF,아프리카,2,2,1
+MR,Mauritania,모리타니,AF,아프리카,3,3,2
+MZ,Mozambique,모잠비크,AF,아프리카,12,12,4
+BJ,Benin,베냉,AF,아프리카,1,1,1
+BW,Botswana,보츠와나,AF,아프리카,5,5,4
+BI,Burundi,부룬디,AF,아프리카,3,3,1
+BF,Burkina Faso,부르키나파소,AF,아프리카,2,2,2
+ST,São Tomé and Principe,상투메 프린시페,AF,아프리카,2,2,1
+EH,Western Sahara (disputed territory),서사하라,AF,아프리카,3,3,2
+SN,Senegal,세네갈,AF,아프리카,3,3,1
+SC,Seychelles,세이셸,AF,아프리카,2,2,1
+SH,"Saint Helena, Ascension and Tristan da Cunha",세인트헬레나,AF,아프리카,2,2,0
+SO,Somalia,소말리아,AF,아프리카,7,7,3
+SD,Sudan,수단,AF,아프리카,7,7,2
+SL,Sierra Leone,시에라리온,AF,아프리카,1,1,1
+DZ,Algeria,알제리,AF,아프리카,31,31,12
+AO,Angola,앙골라,AF,아프리카,13,13,1
+ER,Eritrea,에리트레아,AF,아프리카,1,1,0
+SZ,Eswatini,에스와티니,AF,아프리카,1,1,1
+ET,Ethiopia,에티오피아,AF,아프리카,24,24,4
+UG,Uganda,우간다,AF,아프리카,6,6,1
+EG,Egypt,이집트,AF,아프리카,17,17,14
+ZM,Zambia,잠비아,AF,아프리카,6,6,4
+GQ,Equatorial Guinea,적도 기니,AF,아프리카,5,5,3
+CF,Central African Republic,중앙아프리카 공화국,AF,아프리카,1,1,1
+DJ,Djibouti,지부티,AF,아프리카,1,1,1
+ZW,Zimbabwe,짐바브웨,AF,아프리카,4,4,3
+TD,Chad,차드,AF,아프리카,1,1,1
+CM,Cameroon,카메룬,AF,아프리카,5,5,3
+CV,Cape Verde,카보베르데,AF,아프리카,7,7,4
+KE,Kenya,케냐,AF,아프리카,11,12,4
+KM,Comoros,코모로,AF,아프리카,2,2,0
+CI,Côte d'Ivoire,코트디부아르,AF,아프리카,4,4,1
+CG,Republic of the Congo,콩고 공화국,AF,아프리카,2,2,2
+CD,Democratic Republic of the Congo,콩고 민주 공화국,AF,아프리카,20,20,4
+TZ,Tanzania,탄자니아,AF,아프리카,15,16,4
+TG,Togo,토고,AF,아프리카,1,1,1
+TN,Tunisia,튀니지,AF,아프리카,7,7,2
+NP,Nepal,네팔,AS,아시아,18,19,3
+TW,Taiwan,대만,AS,아시아,11,13,6
+KR,South Korea,대한민국,AS,아시아,14,15,7
+TL,Timor-Leste,동티모르,AS,아시아,4,4,2
+LA,Laos,라오스,AS,아시아,7,7,3
+LB,Lebanon,레바논,AS,아시아,1,1,1
+MO,Macau,마카오,AS,아시아,1,1,1
+MY,Malaysia,말레이시아,AS,아시아,33,34,7
+MV,Maldives,몰디브,AS,아시아,14,15,3
+MN,Mongolia,몽골,AS,아시아,13,13,1
+MM,Myanmar,미얀마,AS,아시아,23,23,3
+BH,Bahrain,바레인,AS,아시아,1,1,1
+BD,Bangladesh,방글라데시,AS,아시아,8,8,3
+VN,Vietnam,베트남,AS,아시아,22,22,8
+BT,Bhutan,부탄,AS,아시아,3,3,1
+KP,North Korea,북한,AS,아시아,4,4,1
+BN,Brunei,브루나이,AS,아시아,1,1,1
+SA,Saudi Arabia,사우디아라비아,AS,아시아,29,29,16
+LK,Sri Lanka,스리랑카,AS,아시아,11,12,2
+SY,Syria,시리아,AS,아시아,4,4,2
+SG,Singapore,싱가포르,AS,아시아,2,2,1
+AE,United Arab Emirates,아랍에미리트,AS,아시아,7,8,6
+AM,Armenia,아르메니아,AS,아시아,2,2,2
+AZ,Azerbaijan,아제르바이잔,AS,아시아,6,6,3
+AF,Afghanistan,아프가니스탄,AS,아시아,6,6,4
+YE,Yemen,예멘,AS,아시아,7,7,4
+OM,Oman,오만,AS,아시아,5,5,4
+JO,Jordan,요르단,AS,아시아,2,3,2
+UZ,Uzbekistan,우즈베키스탄,AS,아시아,12,13,6
+IQ,Iraq,이라크,AS,아시아,6,6,5
+IR,Iran,이란,AS,아시아,44,45,14
+IL,Israel,이스라엘,AS,아시아,3,3,2
+IN,India,인도,AS,아시아,116,116,43
+ID,Indonesia,인도네시아,AS,아시아,119,121,18
+JP,Japan,일본,AS,아시아,77,83,25
+GE,Georgia,조지아,AS,아시아,4,4,4
+CN,China,중국,AS,아시아,243,261,66
+KZ,Kazakhstan,카자흐스탄,AS,아시아,24,24,19
+QA,Qatar,카타르,AS,아시아,1,1,1
+KH,Cambodia,캄보디아,AS,아시아,5,5,4
+CC,Cocos (Keeling) Islands,코코스 제도,AS,아시아,1,1,1
+KW,Kuwait,쿠웨이트,AS,아시아,1,1,1
+CX,Christmas Island,크리스마스 섬,AS,아시아,1,1,0
+KG,Kyrgyzstan,키르기스스탄,AS,아시아,4,4,3
+CY,Cyprus,키프로스,AS,아시아,3,3,3
+TJ,Tajikistan,타지키스탄,AS,아시아,4,4,4
+TH,Thailand,태국,AS,아시아,32,33,9
+TM,Turkmenistan,투르크메니스탄,AS,아시아,6,6,3
+TR,Turkey,튀르키예,AS,아시아,50,51,14
+PK,Pakistan,파키스탄,AS,아시아,23,23,11
+PH,Philippines,필리핀,AS,아시아,44,44,15
+HK,Hong Kong,홍콩,AS,아시아,2,2,1
+GG,Guernsey,건지,EU,유럽,2,2,0
+GR,Greece,그리스,EU,유럽,39,39,11
+NL,Netherlands,네덜란드,EU,유럽,5,5,5
+NO,Norway,노르웨이,EU,유럽,46,47,9
+DK,Denmark,덴마크,EU,유럽,11,11,5
+DE,Germany,독일,EU,유럽,37,38,21
+LV,Latvia,라트비아,EU,유럽,1,1,1
+RU,Russia,러시아,EU,유럽,144,148,40
+RO,Romania,루마니아,EU,유럽,15,16,11
+LU,Luxembourg,룩셈부르크,EU,유럽,1,1,1
+LT,Lithuania,리투아니아,EU,유럽,3,3,3
+IM,Isle of Man,맨섬,EU,유럽,1,1,1
+MC,Monaco,모나코,EU,유럽,1,1,0
+ME,Montenegro,몬테네그로,EU,유럽,2,2,1
+MD,Moldova,몰도바,EU,유럽,1,1,1
+MT,Malta,몰타,EU,유럽,2,2,1
+BE,Belgium,벨기에,EU,유럽,4,5,2
+BY,Belarus,벨라루스,EU,유럽,4,4,2
+BA,Bosnia and Herzegovina,보스니아 헤르체고비나,EU,유럽,4,4,4
+MK,North Macedonia,북마케도니아,EU,유럽,2,2,2
+BG,Bulgaria,불가리아,EU,유럽,4,4,4
+RS,Serbia,세르비아,EU,유럽,3,3,2
+SE,Sweden,스웨덴,EU,유럽,35,38,9
+CH,Switzerland,스위스,EU,유럽,5,5,2
+ES,Spain,스페인,EU,유럽,43,44,20
+SK,Slovakia,슬로바키아,EU,유럽,4,4,1
+SI,Slovenia,슬로베니아,EU,유럽,2,2,1
+IS,Iceland,아이슬란드,EU,유럽,8,9,2
+IE,Ireland,아일랜드,EU,유럽,10,10,4
+AL,Albania,알바니아,EU,유럽,1,1,1
+EE,Estonia,에스토니아,EU,유럽,5,6,1
+GB,United Kingdom,영국,EU,유럽,48,54,14
+AT,Austria,오스트리아,EU,유럽,6,6,6
+IT,Italy,이탈리아,EU,유럽,39,42,22
+JE,Jersey,저지,EU,유럽,1,1,0
+GI,Gibraltar,지브롤터,EU,유럽,1,1,1
+CZ,Czech Republic,체코,EU,유럽,6,6,5
+XK,Kosovo,코소보,EU,유럽,1,1,1
+HR,Croatia,크로아티아,EU,유럽,8,8,6
+FO,Faroe Islands,페로 제도,EU,유럽,1,1,1
+PT,Portugal,포르투갈,EU,유럽,19,19,5
+PL,Poland,폴란드,EU,유럽,15,15,11
+FR,France,프랑스,EU,유럽,47,49,15
+FI,Finland,핀란드,EU,유럽,20,20,10
+HU,Hungary,헝가리,EU,유럽,4,4,3
+GP,Guadeloupe,과들루프,NA,북아메리카,5,5,1
+GT,Guatemala,과테말라,NA,북아메리카,6,6,1
+GD,Grenada,그레나다,NA,북아메리카,2,2,1
+GL,Greenland,그린란드,NA,북아메리카,54,56,2
+NI,Nicaragua,니카라과,NA,북아메리카,4,4,1
+DO,Dominican Republic,도미니카 공화국,NA,북아메리카,8,8,4
+DM,Dominica,도미니카 연방,NA,북아메리카,2,2,0
+MQ,Martinique,마르티니크,NA,북아메리카,1,1,1
+MX,Mexico,멕시코,NA,북아메리카,62,63,28
+MS,Montserrat,몬트세랫,NA,북아메리카,1,1,1
+US,United States,미국,NA,북아메리카,632,679,86
+VI,U.S. Virgin Islands,미국령 버진아일랜드,NA,북아메리카,2,4,1
+BB,Barbados,바베이도스,NA,북아메리카,1,1,1
+BS,Bahamas,바하마,NA,북아메리카,23,23,3
+BM,Bermuda,버뮤다,NA,북아메리카,1,1,1
+BZ,Belize,벨리즈,NA,북아메리카,11,12,1
+MF,Saint Martin,생마르탱,NA,북아메리카,1,1,0
+BL,Saint Barthélemy,생바르텔레미,NA,북아메리카,1,1,0
+PM,Saint Pierre and Miquelon,생피에르 미클롱,NA,북아메리카,2,2,0
+LC,Saint Lucia,세인트루시아,NA,북아메리카,2,2,1
+VC,Saint Vincent and the Grenadines,세인트빈센트 그레나딘,NA,북아메리카,5,5,1
+KN,Saint Kitts and Nevis,세인트키츠 네비스,NA,북아메리카,2,2,1
+SX,Sint Maarten,신트마르턴,NA,북아메리카,1,1,1
+AW,Aruba,아루바,NA,북아메리카,1,1,1
+HT,Haiti,아이티,NA,북아메리카,4,4,2
+AG,Antigua and Barbuda,앤티가 바부다,NA,북아메리카,2,2,1
+AI,Anguilla,앵귈라,NA,북아메리카,1,1,0
+SV,El Salvador,엘살바도르,NA,북아메리카,1,2,1
+VG,British Virgin Islands,영국령 버진아일랜드,NA,북아메리카,2,2,1
+HN,Honduras,온두라스,NA,북아메리카,8,8,3
+JM,Jamaica,자메이카,NA,북아메리카,4,4,2
+BQ,Caribbean Netherlands,카리브 네덜란드,NA,북아메리카,3,3,1
+CA,Canada,캐나다,NA,북아메리카,260,271,15
+KY,Cayman Islands,케이맨 제도,NA,북아메리카,2,2,1
+CR,Costa Rica,코스타리카,NA,북아메리카,9,9,2
+CU,Cuba,쿠바,NA,북아메리카,15,15,6
+CW,Curaçao,퀴라소,NA,북아메리카,1,1,1
+TC,Turks and Caicos Islands,터크스 케이커스 제도,NA,북아메리카,5,5,1
+TT,Trinidad and Tobago,트리니다드 토바고,NA,북아메리카,2,2,2
+PA,Panama,파나마,NA,북아메리카,12,12,1
+PR,Puerto Rico,푸에르토리코,NA,북아메리카,7,8,1
+GU,Guam,괌,OC,오세아니아,1,1,1
+NR,Nauru,나우루,OC,오세아니아,1,1,0
+NF,Norfolk Island,노퍽 섬,OC,오세아니아,1,1,0
+NZ,New Zealand,뉴질랜드,OC,오세아니아,28,28,4
+NC,New Caledonia,뉴칼레도니아,OC,오세아니아,10,11,1
+NU,Niue,니우에,OC,오세아니아,1,1,0
+MH,Marshall Islands,마셜 제도,OC,오세아니아,16,16,1
+UM,United States Minor Outlying Islands,미국령 군소 제도,OC,오세아니아,1,1,0
+FM,Micronesia,미크로네시아,OC,오세아니아,4,4,3
+VU,Vanuatu,바누아투,OC,오세아니아,17,17,1
+MP,Northern Mariana Islands,북마리아나 제도,OC,오세아니아,3,3,1
+WS,Samoa,사모아,OC,오세아니아,1,1,1
+SB,Solomon Islands,솔로몬 제도,OC,오세아니아,20,20,1
+AS,American Samoa,아메리칸사모아,OC,오세아니아,3,3,1
+WF,Wallis and Futuna,왈리스 퓌튀나,OC,오세아니아,2,2,1
+CK,Cook Islands,쿡 제도,OC,오세아니아,6,6,1
+KI,Kiribati,키리바시,OC,오세아니아,4,4,2
+TO,Tonga,통가,OC,오세아니아,5,5,2
+TV,Tuvalu,투발루,OC,오세아니아,1,1,0
+PG,Papua New Guinea,파푸아뉴기니,OC,오세아니아,37,37,2
+PW,Palau,팔라우,OC,오세아니아,1,1,1
+PF,French Polynesia,프랑스령 폴리네시아,OC,오세아니아,38,38,1
+FJ,Fiji,피지,OC,오세아니아,17,17,2
+AU,Australia,호주,OC,오세아니아,154,158,14
+GY,Guyana,가이아나,SA,남아메리카,4,4,1
+VE,Venezuela,베네수엘라,SA,남아메리카,22,22,7
+BO,Bolivia,볼리비아,SA,남아메리카,15,16,6
+BR,Brazil,브라질,SA,남아메리카,125,129,25
+SR,Suriname,수리남,SA,남아메리카,5,6,1
+AR,Argentina,아르헨티나,SA,남아메리카,44,45,12
+EC,Ecuador,에콰도르,SA,남아메리카,15,15,4
+UY,Uruguay,우루과이,SA,남아메리카,3,3,1
+CL,Chile,칠레,SA,남아메리카,19,19,8
+CO,Colombia,콜롬비아,SA,남아메리카,49,50,6
+PY,Paraguay,파라과이,SA,남아메리카,3,3,3
+PE,Peru,페루,SA,남아메리카,25,25,8
+FK,Falkland Islands,포클랜드 제도,SA,남아메리카,2,2,0
+GF,French Guiana,프랑스령 기아나,SA,남아메리카,3,3,1
