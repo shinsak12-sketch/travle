@@ -34,11 +34,13 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _share(BuildContext context, Store s) async {
     final bytes = Uint8List.fromList(utf8.encode(s.exportJson()));
-    await SharePlus.instance.share(ShareParams(
-      files: [XFile.fromData(bytes, mimeType: 'application/json', name: _fileName())],
-      fileNameOverrides: [_fileName()],
-      subject: '트래블 백업',
-    ));
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile.fromData(bytes, mimeType: 'application/json', name: _fileName())],
+        fileNameOverrides: [_fileName()],
+        subject: '트래블 백업',
+      ),
+    );
   }
 
   Future<void> _restore(BuildContext context, Store s) async {
@@ -64,7 +66,13 @@ class SettingsScreen extends StatelessWidget {
         content: Text('지금 폰에 있는 여행 ${s.trips.length}개가 지워지고 백업의 여행 $count개로 바뀜.', style: sans(14, c: C.muted)),
         actions: [
           TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('취소')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: Text('바꾸기', style: sans(14, c: C.red, w: FontWeight.w800))),
+          TextButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: Text(
+              '바꾸기',
+              style: sans(14, c: C.red, w: FontWeight.w800),
+            ),
+          ),
         ],
       ),
     );
@@ -82,37 +90,43 @@ class SettingsScreen extends StatelessWidget {
     final cat = s.catalog!;
     final places = cat.places.values.fold(0, (a, l) => a + l.length);
     return Scaffold(
-      appBar: AppBar(title: Text('백업·설정', style: sans(18, w: FontWeight.w800))),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
-        children: [
-          const EmptyNote('백업이 필요한 이유',
-              '이 앱은 서버 없이 폰 안에만 저장함. 앱을 지우거나 폰을 바꾸기 전에 백업 파일을 저장해두고, 새로 깐 뒤 불러오면 그대로 돌아옴.'),
-          const SizedBox(height: 16),
-          PassButton('백업 파일 저장', icon: Icons.save_alt_rounded, primary: true, onTap: () => _save(context, s)),
-          const SizedBox(height: 10),
-          PassButton('백업 파일 공유 (카톡·드라이브)', icon: Icons.ios_share_rounded, onTap: () => _share(context, s)),
-          const SizedBox(height: 10),
-          PassButton('백업 불러오기', icon: Icons.restore_rounded, dashed: true, onTap: () => _restore(context, s)),
-          const SizedBox(height: 28),
-          const Eyebrow('DATA'),
-          const SizedBox(height: 8),
-          _kv('내 여행', '${s.trips.length}개'),
-          _kv('내장 여행지', '${comma(cat.dests.length)}곳'),
-          _kv('내장 관광 장소', '${comma(places)}곳'),
-          _kv('장소 데이터 출처', 'Wikidata · Wikipedia'),
-          _kv('지도·길안내', '구글지도 앱으로 열기'),
-        ],
+      appBar: AppBar(
+        title: Text('백업·설정', style: sans(18, w: FontWeight.w800)),
+      ),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 8, 18, 24),
+          children: [
+            const EmptyNote('백업이 필요한 이유', '이 앱은 서버 없이 폰 안에만 저장함. 앱을 지우거나 폰을 바꾸기 전에 백업 파일을 저장해두고, 새로 깐 뒤 불러오면 그대로 돌아옴.'),
+            const SizedBox(height: 16),
+            PassButton('백업 파일 저장', icon: Icons.save_alt_rounded, primary: true, onTap: () => _save(context, s)),
+            const SizedBox(height: 10),
+            PassButton('백업 파일 공유 (카톡·드라이브)', icon: Icons.ios_share_rounded, onTap: () => _share(context, s)),
+            const SizedBox(height: 10),
+            PassButton('백업 불러오기', icon: Icons.restore_rounded, dashed: true, onTap: () => _restore(context, s)),
+            const SizedBox(height: 28),
+            const Eyebrow('DATA'),
+            const SizedBox(height: 8),
+            _kv('내 여행', '${s.trips.length}개'),
+            _kv('내장 여행지', '${comma(cat.dests.length)}곳'),
+            _kv('내장 관광 장소', '${comma(places)}곳'),
+            _kv('장소 데이터 출처', 'Wikidata · Wikipedia'),
+            _kv('지도·길안내', '구글지도 앱으로 열기'),
+          ],
+        ),
       ),
     );
   }
 
   Widget _kv(String k, String v) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(children: [
-          Text(k, style: sans(14, c: C.muted)),
-          const Spacer(),
-          Text(v, style: sans(14, w: FontWeight.w800)),
-        ]),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      children: [
+        Text(k, style: sans(14, c: C.muted)),
+        const Spacer(),
+        Text(v, style: sans(14, w: FontWeight.w800)),
+      ],
+    ),
+  );
 }

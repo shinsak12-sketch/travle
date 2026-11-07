@@ -8,23 +8,23 @@ enum ItemType { place, flight, stay, shopping, food, memo }
 
 extension ItemTypeX on ItemType {
   String get label => const {
-        ItemType.place: '장소',
-        ItemType.flight: '항공편',
-        ItemType.stay: '숙소',
-        ItemType.shopping: '쇼핑',
-        ItemType.food: '맛집',
-        ItemType.memo: '메모',
-      }[this]!;
+    ItemType.place: '장소',
+    ItemType.flight: '항공편',
+    ItemType.stay: '숙소',
+    ItemType.shopping: '쇼핑',
+    ItemType.food: '맛집',
+    ItemType.memo: '메모',
+  }[this]!;
 
   /// 지출 분류 기본값
   String get expenseCategory => const {
-        ItemType.place: '관광',
-        ItemType.flight: '항공',
-        ItemType.stay: '숙소',
-        ItemType.shopping: '쇼핑',
-        ItemType.food: '식비',
-        ItemType.memo: '기타',
-      }[this]!;
+    ItemType.place: '관광',
+    ItemType.flight: '항공',
+    ItemType.stay: '숙소',
+    ItemType.shopping: '쇼핑',
+    ItemType.food: '식비',
+    ItemType.memo: '기타',
+  }[this]!;
 }
 
 class TripItem {
@@ -62,44 +62,44 @@ class TripItem {
     this.sub = '',
     this.lat,
     this.lon,
-  })  : id = id ?? newId(),
-        f = f ?? {};
+  }) : id = id ?? newId(),
+       f = f ?? {};
 
   String get(String k) => f[k] ?? '';
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        't': type.name,
-        'title': title,
-        if (time.isNotEmpty) 'time': time,
-        if (memo.isNotEmpty) 'memo': memo,
-        if (done) 'done': true,
-        if (cost != null) 'cost': cost,
-        if (cost != null) 'cur': currency,
-        if (f.isNotEmpty) 'f': f,
-        if (destId != null) 'dest': destId,
-        if (cat != null) 'cat': cat,
-        if (sub.isNotEmpty) 'sub': sub,
-        if (lat != null) 'lat': lat,
-        if (lon != null) 'lon': lon,
-      };
+    'id': id,
+    't': type.name,
+    'title': title,
+    if (time.isNotEmpty) 'time': time,
+    if (memo.isNotEmpty) 'memo': memo,
+    if (done) 'done': true,
+    if (cost != null) 'cost': cost,
+    if (cost != null) 'cur': currency,
+    if (f.isNotEmpty) 'f': f,
+    if (destId != null) 'dest': destId,
+    if (cat != null) 'cat': cat,
+    if (sub.isNotEmpty) 'sub': sub,
+    if (lat != null) 'lat': lat,
+    if (lon != null) 'lon': lon,
+  };
 
   factory TripItem.fromJson(Map<String, dynamic> j) => TripItem(
-        id: j['id'],
-        type: ItemType.values.firstWhere((t) => t.name == j['t'], orElse: () => ItemType.memo),
-        title: j['title'] ?? '',
-        time: j['time'] ?? '',
-        memo: j['memo'] ?? '',
-        done: j['done'] ?? false,
-        cost: (j['cost'] as num?)?.toDouble(),
-        currency: j['cur'] ?? 'KRW',
-        f: (j['f'] as Map?)?.map((k, v) => MapEntry('$k', '$v')),
-        destId: j['dest'],
-        cat: j['cat'],
-        sub: j['sub'] ?? '',
-        lat: (j['lat'] as num?)?.toDouble(),
-        lon: (j['lon'] as num?)?.toDouble(),
-      );
+    id: j['id'],
+    type: ItemType.values.firstWhere((t) => t.name == j['t'], orElse: () => ItemType.memo),
+    title: j['title'] ?? '',
+    time: j['time'] ?? '',
+    memo: j['memo'] ?? '',
+    done: j['done'] ?? false,
+    cost: (j['cost'] as num?)?.toDouble(),
+    currency: j['cur'] ?? 'KRW',
+    f: (j['f'] as Map?)?.map((k, v) => MapEntry('$k', '$v')),
+    destId: j['dest'],
+    cat: j['cat'],
+    sub: j['sub'] ?? '',
+    lat: (j['lat'] as num?)?.toDouble(),
+    lon: (j['lon'] as num?)?.toDouble(),
+  );
 
   TripItem copy() => TripItem.fromJson(toJson());
 }
@@ -113,8 +113,7 @@ class Leg {
   Leg({required this.destId, required this.cityKo, required this.code, this.nights = 1});
 
   Map<String, dynamic> toJson() => {'dest': destId, 'ko': cityKo, 'code': code, 'n': nights};
-  factory Leg.fromJson(Map<String, dynamic> j) =>
-      Leg(destId: j['dest'], cityKo: j['ko'], code: j['code'], nights: j['n'] ?? 1);
+  factory Leg.fromJson(Map<String, dynamic> j) => Leg(destId: j['dest'], cityKo: j['ko'], code: j['code'], nights: j['n'] ?? 1);
 }
 
 class Expense {
@@ -137,24 +136,24 @@ class Expense {
   }) : id = id ?? newId();
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'cat': category,
-        'amt': amount,
-        'cur': currency,
-        'date': date.toIso8601String(),
-        if (itemId != null) 'item': itemId,
-      };
+    'id': id,
+    'title': title,
+    'cat': category,
+    'amt': amount,
+    'cur': currency,
+    'date': date.toIso8601String(),
+    if (itemId != null) 'item': itemId,
+  };
 
   factory Expense.fromJson(Map<String, dynamic> j) => Expense(
-        id: j['id'],
-        title: j['title'] ?? '',
-        category: j['cat'] ?? '기타',
-        amount: (j['amt'] as num).toDouble(),
-        currency: j['cur'] ?? 'KRW',
-        date: DateTime.parse(j['date']),
-        itemId: j['item'],
-      );
+    id: j['id'],
+    title: j['title'] ?? '',
+    category: j['cat'] ?? '기타',
+    amount: (j['amt'] as num).toDouble(),
+    currency: j['cur'] ?? 'KRW',
+    date: DateTime.parse(j['date']),
+    itemId: j['item'],
+  );
 }
 
 class CheckItem {
@@ -163,8 +162,7 @@ class CheckItem {
   String group;
   String src; // 템플릿 키(base, hot, golf…) 또는 custom
   bool done;
-  CheckItem({String? id, required this.text, required this.group, required this.src, this.done = false})
-      : id = id ?? newId();
+  CheckItem({String? id, required this.text, required this.group, required this.src, this.done = false}) : id = id ?? newId();
 
   Map<String, dynamic> toJson() => {'id': id, 'text': text, 'g': group, 'src': src, if (done) 'done': true};
   factory CheckItem.fromJson(Map<String, dynamic> j) =>
@@ -213,14 +211,14 @@ class Trip {
     List<String>? activities,
     List<CheckItem>? checklist,
     List<String>? hiddenChecks,
-  })  : id = id ?? newId(),
-        days = days ?? [],
-        wish = wish ?? [],
-        rates = rates ?? {},
-        expenses = expenses ?? [],
-        activities = activities ?? [],
-        checklist = checklist ?? [],
-        hiddenChecks = hiddenChecks ?? [] {
+  }) : id = id ?? newId(),
+       days = days ?? [],
+       wish = wish ?? [],
+       rates = rates ?? {},
+       expenses = expenses ?? [],
+       activities = activities ?? [],
+       checklist = checklist ?? [],
+       hiddenChecks = hiddenChecks ?? [] {
     fitDays();
   }
 
@@ -262,40 +260,38 @@ class Trip {
   double get spent => expenses.fold(0.0, (a, e) => a + toKrw(e.amount, e.currency));
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'start': start.toIso8601String(),
-        'legs': legs.map((l) => l.toJson()).toList(),
-        'days': days.map((d) => d.map((i) => i.toJson()).toList()).toList(),
-        'wish': wish.map((i) => i.toJson()).toList(),
-        'budget': budget,
-        'rates': rates,
-        'exp': expenses.map((e) => e.toJson()).toList(),
-        'climate': climate.name,
-        'climateManual': climateManual,
-        'rainy': rainy,
-        'acts': activities,
-        'checks': checklist.map((c) => c.toJson()).toList(),
-        'hidden': hiddenChecks,
-      };
+    'id': id,
+    'title': title,
+    'start': start.toIso8601String(),
+    'legs': legs.map((l) => l.toJson()).toList(),
+    'days': days.map((d) => d.map((i) => i.toJson()).toList()).toList(),
+    'wish': wish.map((i) => i.toJson()).toList(),
+    'budget': budget,
+    'rates': rates,
+    'exp': expenses.map((e) => e.toJson()).toList(),
+    'climate': climate.name,
+    'climateManual': climateManual,
+    'rainy': rainy,
+    'acts': activities,
+    'checks': checklist.map((c) => c.toJson()).toList(),
+    'hidden': hiddenChecks,
+  };
 
   factory Trip.fromJson(Map<String, dynamic> j) => Trip(
-        id: j['id'],
-        title: j['title'],
-        start: DateTime.parse(j['start']),
-        legs: (j['legs'] as List).map((e) => Leg.fromJson(e)).toList(),
-        days: (j['days'] as List)
-            .map((d) => (d as List).map((e) => TripItem.fromJson(e)).toList())
-            .toList(),
-        wish: (j['wish'] as List? ?? []).map((e) => TripItem.fromJson(e)).toList(),
-        budget: j['budget'] ?? 0,
-        rates: (j['rates'] as Map? ?? {}).map((k, v) => MapEntry('$k', (v as num).toDouble())),
-        expenses: (j['exp'] as List? ?? []).map((e) => Expense.fromJson(e)).toList(),
-        climate: Climate.values.firstWhere((c) => c.name == j['climate'], orElse: () => Climate.mild),
-        climateManual: j['climateManual'] ?? false,
-        rainy: j['rainy'] ?? false,
-        activities: List<String>.from(j['acts'] ?? []),
-        checklist: (j['checks'] as List? ?? []).map((e) => CheckItem.fromJson(e)).toList(),
-        hiddenChecks: List<String>.from(j['hidden'] ?? []),
-      );
+    id: j['id'],
+    title: j['title'],
+    start: DateTime.parse(j['start']),
+    legs: (j['legs'] as List).map((e) => Leg.fromJson(e)).toList(),
+    days: (j['days'] as List).map((d) => (d as List).map((e) => TripItem.fromJson(e)).toList()).toList(),
+    wish: (j['wish'] as List? ?? []).map((e) => TripItem.fromJson(e)).toList(),
+    budget: j['budget'] ?? 0,
+    rates: (j['rates'] as Map? ?? {}).map((k, v) => MapEntry('$k', (v as num).toDouble())),
+    expenses: (j['exp'] as List? ?? []).map((e) => Expense.fromJson(e)).toList(),
+    climate: Climate.values.firstWhere((c) => c.name == j['climate'], orElse: () => Climate.mild),
+    climateManual: j['climateManual'] ?? false,
+    rainy: j['rainy'] ?? false,
+    activities: List<String>.from(j['acts'] ?? []),
+    checklist: (j['checks'] as List? ?? []).map((e) => CheckItem.fromJson(e)).toList(),
+    hiddenChecks: List<String>.from(j['hidden'] ?? []),
+  );
 }

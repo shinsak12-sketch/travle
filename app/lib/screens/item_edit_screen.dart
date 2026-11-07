@@ -4,11 +4,31 @@ import 'package:flutter/material.dart';
 import '../data/models.dart';
 import '../data/store.dart';
 import '../ui/item_card.dart';
+import '../ui/sheet.dart';
 import '../ui/theme.dart';
 import '../util/format.dart';
 import '../util/maps.dart';
 
-const currencies = ['KRW', 'JPY', 'USD', 'EUR', 'CNY', 'TWD', 'HKD', 'VND', 'THB', 'PHP', 'SGD', 'MYR', 'IDR', 'AUD', 'NZD', 'GBP', 'CHF', 'CAD'];
+const currencies = [
+  'KRW',
+  'JPY',
+  'USD',
+  'EUR',
+  'CNY',
+  'TWD',
+  'HKD',
+  'VND',
+  'THB',
+  'PHP',
+  'SGD',
+  'MYR',
+  'IDR',
+  'AUD',
+  'NZD',
+  'GBP',
+  'CHF',
+  'CAD',
+];
 
 class _F {
   final String key, label, hint;
@@ -60,10 +80,7 @@ const _fields = {
     _F('address', '주소', hint: '구글지도 검색에 쓰임'),
     _F('maps', '구글지도 링크 (선택)', hint: '공유로 복사한 링크'),
   ],
-  ItemType.place: [
-    _F('address', '주소', hint: '구글지도 검색에 쓰임'),
-    _F('maps', '구글지도 링크 (선택)', hint: '공유로 복사한 링크'),
-  ],
+  ItemType.place: [_F('address', '주소', hint: '구글지도 검색에 쓰임'), _F('maps', '구글지도 링크 (선택)', hint: '공유로 복사한 링크')],
   ItemType.memo: <_F>[],
 };
 
@@ -84,6 +101,7 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
   late ItemType _type;
   final _c = <String, TextEditingController>{};
   bool _init = false;
+  bool _saved = false;
 
   TextEditingController _ctl(String k, String v) => _c.putIfAbsent(k, () => TextEditingController(text: v));
 
@@ -147,8 +165,8 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
         _item.f[f.key] = v;
       }
     }
-    final costText = _ctl('cost', _item.cost == null ? '' : _fmtCost(_item.cost!)).text.replaceAll(',', '').trim();
-    _item.cost = double.tryParse(costText);
+    _item.cost = parseAmount(_ctl('cost', amountText(_item.cost)).text);
+    _saved = true;
     if (_item.cost != null && _item.currency != 'KRW' && !t.rates.containsKey(_item.currency)) {
       t.rates[_item.currency] = 0; // 예산 탭에서 환율 넣도록 표시
     }
@@ -177,13 +195,49 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     Navigator.pop(context);
   }
 
-  String _fmtCost(double v) => v == v.roundToDouble() ? v.toInt().toString() : v.toString();
-
   Future<void> _delete() async {
     final store = StoreScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final t = store.byId(widget.tripId)!;
-    store.removeItem(t, _orig!);
+    final item = _orig!;
+    final day = store.findDay(t, item);
+    final at = day == null ? t.wish.indexOf(item) : t.days[day].indexOf(item);
+    final linked = t.expenses.where((e) => e.itemId == item.id).toList();
+    store.removeItem(t, item);
+    _saved = true;
     Navigator.pop(context);
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('"${item.title}" 지움'),
+          action: SnackBarAction(
+            label: '되돌리기',
+            textColor: const Color(0xFFFF8A8C),
+            onPressed: () {
+              final list = day == null ? t.wish : t.days[day.clamp(0, t.days.length - 1)];
+              list.insert(at.clamp(0, list.length), item);
+              t.expenses.addAll(linked);
+              store.changed();
+            },
+          ),
+        ),
+      );
+  }
+
+  /// 입력한 게 있으면 닫을 때 한 번 물어봄
+  bool get _dirty {
+    if (_saved) return false;
+    final o = _orig;
+    String text(String k, String v) => _c[k]?.text.trim() ?? v;
+    if (o == null) return _c.values.any((c) => c.text.trim().isNotEmpty) || _item.time.isNotEmpty;
+    return text('title', o.title) != o.title ||
+        text('memo', o.memo) != o.memo ||
+        _item.time != o.time ||
+        _item.done != o.done ||
+        _item.currency != o.currency ||
+        parseAmount(text('cost', amountText(o.cost))) != o.cost ||
+        _fields[_type]!.any((f) => text(f.key, o.get(f.key)).toUpperCase() != o.get(f.key).toUpperCase());
   }
 
   @override
@@ -191,151 +245,213 @@ class _ItemEditScreenState extends State<ItemEditScreen> {
     final store = StoreScope.of(context);
     final t = store.byId(widget.tripId)!;
     final cat = store.catalog!;
-    final city = _item.destId != null ? cat.byId[_item.destId!] : (t.legOf(_day ?? 0) == null ? null : cat.byId[t.legOf(_day ?? 0)!.destId]);
+    final city = _item.destId != null
+        ? cat.byId[_item.destId!]
+        : (t.legOf(_day ?? 0) == null ? null : cat.byId[t.legOf(_day ?? 0)!.destId]);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(context)),
-        title: Row(children: [
-          Icon(itemIcon(_type), size: 20),
-          const SizedBox(width: 8),
-          Text(_orig == null ? '${_type.label} 추가' : _type.label, style: sans(18, w: FontWeight.w800)),
-        ]),
-        actions: [
-          if (_orig != null)
-            IconButton(tooltip: '삭제', onPressed: _delete, icon: const Icon(Icons.delete_outline_rounded)),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              children: [
-                if (_orig == null && _type != ItemType.flight) ...[
-                  Wrap(spacing: 6, runSpacing: 6, children: [
-                    for (final ty in [ItemType.food, ItemType.shopping, ItemType.stay, ItemType.place, ItemType.memo])
-                      PassChip(ty == ItemType.place ? '장소' : ty.label,
-                          selected: _type == ty, onTap: () => setState(() => _type = _item.type = ty)),
-                  ]),
-                  const SizedBox(height: 16),
-                ],
-                _field(_titleLabel[_type]!, _ctl('title', _item.title),
-                    fixed: _type == ItemType.flight, enabled: !_fromCatalog, big: true),
-                if (_fromCatalog && _item.get('desc').isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(_item.get('desc'), style: sans(14, c: C.muted, h: 1.55, w: FontWeight.w400)),
-                  ),
-                const SizedBox(height: 14),
-                _timeRow(),
-                for (final f in _fields[_type]!)
-                  if (!(_fromCatalog && (f.key == 'address' || f.key == 'maps')))
-                    Padding(
-                      padding: const EdgeInsets.only(top: 14),
-                      child: _field(f.label, _ctl(f.key, _item.get(f.key)), hint: f.hint, fixed: f.mono, multi: f.multi),
-                    ),
-                const SizedBox(height: 14),
-                _field('메모', _ctl('memo', _item.memo), multi: true, hint: '자유롭게'),
-                if (_type != ItemType.memo) ...[
-                  const SizedBox(height: 14),
-                  _costRow(t),
-                ],
-                const SizedBox(height: 20),
-                const Eyebrow('어느 날?'),
-                const SizedBox(height: 8),
-                Wrap(spacing: 6, runSpacing: 6, children: [
-                  PassChip('담은 곳', selected: _day == null, onTap: () => setState(() => _day = null)),
-                  for (var d = 0; d < t.dayCount; d++)
-                    PassChip('D${d + 1} ${md(t.dateOf(d))}', selected: _day == d, onTap: () => setState(() => _day = d)),
-                ]),
-                if (_orig != null) ...[
-                  const SizedBox(height: 20),
-                  Row(children: [
-                    if (_type != ItemType.memo && _type != ItemType.flight)
-                      Expanded(
-                        child: PassButton('구글지도',
-                            icon: Icons.near_me_outlined, onTap: () => openMaps(_orig!, cityEn: city?.en ?? '')),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (!_dirty || await confirmDiscard(context)) {
+          _saved = true;
+          if (context.mounted) Navigator.pop(context);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.maybePop(context)),
+          title: Row(
+            children: [
+              Icon(itemIcon(_type), size: 20),
+              const SizedBox(width: 8),
+              Text(_orig == null ? '${_type.label} 추가' : _type.label, style: sans(18, w: FontWeight.w800)),
+            ],
+          ),
+          actions: [
+            if (_orig != null) IconButton(tooltip: '삭제', onPressed: _delete, icon: const Icon(Icons.delete_outline_rounded)),
+          ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  children: [
+                    if (_orig == null && _type != ItemType.flight) ...[
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          for (final ty in [ItemType.food, ItemType.shopping, ItemType.stay, ItemType.place, ItemType.memo])
+                            PassChip(
+                              ty == ItemType.place ? '장소' : ty.label,
+                              selected: _type == ty,
+                              onTap: () => setState(() => _type = _item.type = ty),
+                            ),
+                        ],
                       ),
-                    if (_type != ItemType.memo && _type != ItemType.flight) const SizedBox(width: 10),
-                    Expanded(
-                      child: PassButton(_item.done ? '다녀옴 취소' : '다녀옴',
-                          icon: Icons.check_rounded, onTap: () => setState(() => _item.done = !_item.done)),
+                      const SizedBox(height: 16),
+                    ],
+                    _field(
+                      _titleLabel[_type]!,
+                      _ctl('title', _item.title),
+                      fixed: _type == ItemType.flight,
+                      enabled: !_fromCatalog,
+                      big: true,
                     ),
-                  ]),
-                ],
-              ],
-            ),
+                    if (_fromCatalog && _item.get('desc').isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          _item.get('desc'),
+                          style: sans(14, c: C.muted, h: 1.55, w: FontWeight.w400),
+                        ),
+                      ),
+                    const SizedBox(height: 14),
+                    _timeRow(),
+                    for (final f in _fields[_type]!)
+                      if (!(_fromCatalog && (f.key == 'address' || f.key == 'maps')))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 14),
+                          child: _field(f.label, _ctl(f.key, _item.get(f.key)), hint: f.hint, fixed: f.mono, multi: f.multi),
+                        ),
+                    const SizedBox(height: 14),
+                    _field('메모', _ctl('memo', _item.memo), multi: true, hint: '자유롭게'),
+                    if (_type != ItemType.memo) ...[const SizedBox(height: 14), _costRow(t)],
+                    const SizedBox(height: 20),
+                    const Eyebrow('어느 날?'),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        PassChip('담은 곳', selected: _day == null, onTap: () => setState(() => _day = null)),
+                        for (var d = 0; d < t.dayCount; d++)
+                          PassChip('D${d + 1} ${md(t.dateOf(d))}', selected: _day == d, onTap: () => setState(() => _day = d)),
+                      ],
+                    ),
+                    if (_orig != null) ...[
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          if (_type != ItemType.memo && _type != ItemType.flight)
+                            Expanded(
+                              child: PassButton(
+                                '구글지도',
+                                icon: Icons.near_me_outlined,
+                                onTap: () => openMaps(_orig!, cityEn: city?.en ?? ''),
+                              ),
+                            ),
+                          if (_type != ItemType.memo && _type != ItemType.flight) const SizedBox(width: 10),
+                          Expanded(
+                            child: PassButton(
+                              _item.done ? '다녀옴 취소' : '다녀옴',
+                              icon: Icons.check_rounded,
+                              onTap: () => setState(() => _item.done = !_item.done),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 6, 18, 14),
+                child: PassButton('저장', primary: true, height: 56, onTap: _save),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 6, 18, 14),
-            child: PassButton('저장', primary: true, height: 56, onTap: _save),
-          ),
-        ]),
+        ),
       ),
     );
   }
 
-  Widget _timeRow() => Row(children: [
-        Expanded(
-          child: Press(
-            onTap: _pickTime,
-            child: Container(
-              height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                  color: C.paper, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.line2, width: 1.5)),
-              child: Row(children: [
+  Widget _timeRow() => Row(
+    children: [
+      Expanded(
+        child: Press(
+          onTap: _pickTime,
+          child: Container(
+            height: 52,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: C.paper,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: C.line2, width: 1.5),
+            ),
+            child: Row(
+              children: [
                 const Icon(Icons.schedule_rounded, size: 18, color: C.muted),
                 const SizedBox(width: 10),
                 Text(_timeLabel[_type]!, style: sans(14, c: C.muted)),
                 const Spacer(),
                 Text(_item.time.isEmpty ? '--:--' : _item.time, style: mono(16, bold: true)),
-              ]),
+              ],
             ),
           ),
         ),
-        if (_item.time.isNotEmpty)
-          IconButton(
-              tooltip: '시간 지우기',
-              onPressed: () => setState(() => _item.time = ''),
-              icon: const Icon(Icons.close_rounded, color: C.faint)),
-      ]);
+      ),
+      if (_item.time.isNotEmpty)
+        IconButton(
+          tooltip: '시간 지우기',
+          onPressed: () => setState(() => _item.time = ''),
+          icon: const Icon(Icons.close_rounded, color: C.faint),
+        ),
+    ],
+  );
 
   Widget _costRow(Trip t) {
     final list = {...currencies, ...t.rates.keys, _item.currency}.toList();
-    return Row(children: [
-      Expanded(
-        child: _field('금액 (넣으면 예산에 자동 반영)', _ctl('cost', _item.cost == null ? '' : _fmtCost(_item.cost!)),
-            fixed: true, number: true),
-      ),
-      const SizedBox(width: 8),
-      Container(
-        height: 56,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(color: C.paper, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.line2, width: 1.5)),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: _item.currency,
-            style: mono(14, bold: true),
-            items: [for (final c in list) DropdownMenuItem(value: c, child: Text(c))],
-            onChanged: (v) => setState(() => _item.currency = v ?? 'KRW'),
+    return Row(
+      children: [
+        Expanded(child: _field('금액 (넣으면 예산에 자동 반영)', _ctl('cost', amountText(_item.cost)), fixed: true, number: true)),
+        const SizedBox(width: 8),
+        Container(
+          height: 56,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          decoration: BoxDecoration(
+            color: C.paper,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: C.line2, width: 1.5),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _item.currency,
+              style: mono(14, bold: true),
+              items: [for (final c in list) DropdownMenuItem(value: c, child: Text(c))],
+              onChanged: (v) => setState(() => _item.currency = v ?? 'KRW'),
+            ),
           ),
         ),
-      ),
-    ]);
+      ],
+    );
   }
 
-  Widget _field(String label, TextEditingController c,
-      {String hint = '', bool fixed = false, bool multi = false, bool enabled = true, bool big = false, bool number = false}) {
+  Widget _field(
+    String label,
+    TextEditingController c, {
+    String hint = '',
+    bool fixed = false,
+    bool multi = false,
+    bool enabled = true,
+    bool big = false,
+    bool number = false,
+  }) {
     return TextField(
       controller: c,
       enabled: enabled,
       minLines: multi ? 2 : 1,
       maxLines: multi ? 5 : 1,
-      keyboardType: number ? const TextInputType.numberWithOptions(decimal: true) : (multi ? TextInputType.multiline : TextInputType.text),
+      keyboardType: number
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : (multi ? TextInputType.multiline : TextInputType.text),
+      inputFormatters: number ? const [ThousandsFormatter()] : null,
+      textInputAction: multi ? TextInputAction.newline : TextInputAction.next,
       style: fixed ? mono(big ? 18 : 15, bold: true) : sans(big ? 17 : 15, w: big ? FontWeight.w800 : FontWeight.w600),
       decoration: InputDecoration(labelText: label, hintText: hint.isEmpty ? null : hint),
     );

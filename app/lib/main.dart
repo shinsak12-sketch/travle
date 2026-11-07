@@ -8,12 +8,14 @@ import 'ui/theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    systemNavigationBarColor: C.bg,
-    systemNavigationBarIconBrightness: Brightness.dark,
-  ));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: C.bg,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
   final store = Store()..init();
   runApp(StoreScope(store: store, child: const TravleApp()));
 }
@@ -34,6 +36,12 @@ class TravleApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // 입력칸 밖을 누르면 키보드 닫기
+      builder: (context, child) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: child,
+      ),
       home: const _Boot(),
     );
   }
@@ -47,11 +55,14 @@ class _Boot extends StatelessWidget {
     if (!store.ready) {
       return Scaffold(
         body: Center(
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text('TRAVLE', style: mono(28, bold: true, ls: 6)),
-            const SizedBox(height: 8),
-            const Eyebrow('LOADING 2,263 CITIES'),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('TRAVLE', style: mono(28, bold: true, ls: 6)),
+              const SizedBox(height: 8),
+              const Eyebrow('LOADING 2,263 CITIES'),
+            ],
+          ),
         ),
       );
     }
