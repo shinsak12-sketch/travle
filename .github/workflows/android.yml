@@ -48,7 +48,7 @@ jobs:
           keyPassword=$KEYSTORE_PASSWORD
           PROPS
 
-      - run: flutter build apk --release --build-number ${{ github.run_number }}
+      - run: flutter build apk --release --build-number $((100 + ${{ github.run_number }}))
 
       - run: cp build/app/outputs/flutter-apk/app-release.apk build/travle-${{ github.run_number }}.apk
 

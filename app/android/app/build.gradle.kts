@@ -23,7 +23,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.shinsak.travle"
+        applicationId = "com.shinsak.tripass"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -36,6 +36,7 @@ android {
         versionName = flutter.versionName
     }
 
+    // CI Secrets(KEYSTORE_BASE64, KEYSTORE_PASSWORD)로 key.properties가 생기면 고정 키, 없으면 디버그 키
     signingConfigs {
         if (keyProps.getProperty("storeFile") != null) {
             create("release") {
