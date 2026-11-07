@@ -16,6 +16,8 @@
 
 `app/` 가 바뀌어 push 되면 GitHub Actions가 APK를 빌드해 **Releases**에 올림. 폰에서 최신 릴리스의 `travle-<번호>.apk`를 받아 설치.
 
+앱 ID는 `com.shinsak.tripass` (예전에 이 저장소로 만들었던 `com.shinsak.travle` 앱과 따로 설치됨).
+
 업데이트를 덮어 설치하려면 서명 키가 매번 같아야 함. 저장소 Secrets에 `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`가 있으면 그 키로 서명하고, 없으면 빌드마다 바뀌는 디버그 키로 서명함(이 경우 새 버전은 지우고 다시 설치 → 먼저 백업).
 
 ### 개발
