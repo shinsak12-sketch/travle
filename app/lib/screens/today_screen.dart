@@ -34,23 +34,29 @@ class TodayScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
           children: [
-            Row(children: [
-              IconButton(
+            Row(
+              children: [
+                IconButton(
                   tooltip: '뒤로',
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18)),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Eyebrow('TODAY · D${day + 1} · ${md(t.dateOf(day))} ${wkEn(t.dateOf(day))}'),
-                  Text('${leg?.cityKo ?? ''} ${day + 1}일째', style: sans(24, w: FontWeight.w800)),
-                ]),
-              ),
-              IconButton(
-                tooltip: '전체 일정',
-                onPressed: () => Navigator.pushReplacement(context, slideRoute(TripScreen(tripId: t.id))),
-                icon: const Icon(Icons.view_agenda_outlined),
-              ),
-            ]),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Eyebrow('TODAY · D${day + 1} · ${md(t.dateOf(day))} ${wkEn(t.dateOf(day))}'),
+                      Text('${leg?.cityKo ?? ''} ${day + 1}일째', style: sans(24, w: FontWeight.w800)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: '전체 일정',
+                  onPressed: () => Navigator.pushReplacement(context, slideRoute(TripScreen(tripId: t.id))),
+                  icon: const Icon(Icons.view_agenda_outlined),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             if (items.isNotEmpty) _progress(items),
             const SizedBox(height: 14),
@@ -59,7 +65,11 @@ class TodayScreen extends StatelessWidget {
             else if (now == null)
               const EmptyNote('오늘 일정 끝', '모두 다녀왔음. 푹 쉬기.')
             else
-              SlideIn(index: 0, from: const Offset(0, -10), child: _nowPass(context, store, t, now, items.indexOf(now) + 1, cityEn)),
+              SlideIn(
+                index: 0,
+                from: const Offset(0, -10),
+                child: _nowPass(context, store, t, now, items.indexOf(now) + 1, cityEn),
+              ),
             if (next.isNotEmpty) ...[
               const SizedBox(height: 18),
               const Eyebrow('NEXT'),
@@ -87,15 +97,25 @@ class TodayScreen extends StatelessWidget {
                     onTap: () => store.toggleDone(t, it),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: C.line, width: 1.5)),
-                      child: Row(children: [
-                        SizedBox(width: 50, child: Text(it.time.isEmpty ? '--:--' : it.time, style: mono(13, bold: true, c: C.faint))),
-                        Expanded(
-                          child: Text(it.title,
-                              style: sans(14, c: C.faint).copyWith(decoration: TextDecoration.lineThrough)),
-                        ),
-                        const Stamp('USED', size: 10),
-                      ]),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: C.line, width: 1.5),
+                      ),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 50,
+                            child: Text(it.time.isEmpty ? '--:--' : it.time, style: mono(13, bold: true, c: C.faint)),
+                          ),
+                          Expanded(
+                            child: Text(
+                              it.title,
+                              style: sans(14, c: C.faint).copyWith(decoration: TextDecoration.lineThrough),
+                            ),
+                          ),
+                          const Stamp('USED', size: 10),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -106,13 +126,25 @@ class TodayScreen extends StatelessWidget {
                 onTap: () => openMaps(stay, cityEn: cityEn),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(color: C.paper, borderRadius: BorderRadius.circular(12), border: Border.all(color: C.line, width: 1.5)),
-                  child: Row(children: [
-                    const Eyebrow('STAY'),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(stay.title, style: sans(14, w: FontWeight.w800), overflow: TextOverflow.ellipsis)),
-                    const Icon(Icons.near_me_outlined, size: 18, color: C.muted),
-                  ]),
+                  decoration: BoxDecoration(
+                    color: C.paper,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: C.line, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      const Eyebrow('STAY'),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          stay.title,
+                          style: sans(14, w: FontWeight.w800),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const Icon(Icons.near_me_outlined, size: 18, color: C.muted),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -124,22 +156,24 @@ class TodayScreen extends StatelessWidget {
 
   Widget _progress(List<TripItem> items) {
     final firstOpen = items.indexWhere((i) => !i.done);
-    return Row(children: [
-      for (var i = 0; i < items.length; i++) ...[
-        Expanded(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            height: 6,
-            decoration: BoxDecoration(
-              color: items[i].done ? C.ink : (i == firstOpen ? C.red : C.line2),
-              borderRadius: BorderRadius.circular(3),
+    return Row(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          Expanded(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              height: 6,
+              decoration: BoxDecoration(
+                color: items[i].done ? C.ink : (i == firstOpen ? C.red : C.line2),
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 5),
+          const SizedBox(width: 5),
+        ],
+        Text('${items.where((i) => i.done).length}/${items.length}', style: mono(12, bold: true)),
       ],
-      Text('${items.where((i) => i.done).length}/${items.length}', style: mono(12, bold: true)),
-    ]);
+    );
   }
 
   Widget _nowPass(BuildContext context, Store store, Trip t, TripItem it, int n, String cityEn) {
@@ -150,65 +184,88 @@ class TodayScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [BoxShadow(color: Color(0x5914213D), blurRadius: 28, offset: Offset(0, 14))],
       ),
-      child: Stack(clipBehavior: Clip.none, children: [
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                const _Blink(),
-                const SizedBox(width: 8),
-                Expanded(child: Eyebrow('NOW BOARDING · ${two(n)} · ${it.type.label}', color: C.onInk)),
-                Text(it.time.isEmpty ? '' : it.time, style: mono(15, bold: true, c: Colors.white)),
-              ]),
-              const SizedBox(height: 10),
-              Text(it.title, style: sans(28, w: FontWeight.w800, c: Colors.white, h: 1.2)),
-              if (desc.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(desc, style: sans(13.5, c: const Color(0xFFC7D1E6), h: 1.5)),
-              ],
-            ]),
-          ),
-          const Dashed(color: C.ink2),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
-            child: Row(children: [
-              if (it.type != ItemType.memo && it.type != ItemType.flight) ...[
-                Expanded(
-                  flex: 13,
-                  child: _btn('구글지도', Icons.near_me_outlined, true, () => openMaps(it, cityEn: cityEn)),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const _Blink(),
+                        const SizedBox(width: 8),
+                        Expanded(child: Eyebrow('NOW BOARDING · ${two(n)} · ${it.type.label}', color: C.onInk)),
+                        Text(it.time.isEmpty ? '' : it.time, style: mono(15, bold: true, c: Colors.white)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      it.title,
+                      style: sans(28, w: FontWeight.w800, c: Colors.white, h: 1.2),
+                    ),
+                    if (desc.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(desc, style: sans(13.5, c: const Color(0xFFC7D1E6), h: 1.5)),
+                    ],
+                  ],
                 ),
-                const SizedBox(width: 10),
-              ],
-              Expanded(flex: 10, child: _btn('다녀옴', Icons.check_rounded, false, () => store.toggleDone(t, it))),
-            ]),
+              ),
+              const Dashed(color: C.ink2),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
+                child: Row(
+                  children: [
+                    if (it.type != ItemType.memo && it.type != ItemType.flight) ...[
+                      Expanded(flex: 13, child: _btn('구글지도', Icons.near_me_outlined, true, () => openMaps(it, cityEn: cityEn))),
+                      const SizedBox(width: 10),
+                    ],
+                    Expanded(flex: 10, child: _btn('다녀옴', Icons.check_rounded, false, () => store.toggleDone(t, it))),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ]),
-        Positioned(left: -9, bottom: 76, child: _hole()),
-        Positioned(right: -9, bottom: 76, child: _hole()),
-      ]),
+          Positioned(left: -9, bottom: 76, child: _hole()),
+          Positioned(right: -9, bottom: 76, child: _hole()),
+        ],
+      ),
     );
   }
 
-  Widget _hole() => Container(width: 18, height: 18, decoration: const BoxDecoration(color: C.bg, shape: BoxShape.circle));
+  Widget _hole() => Container(
+    width: 18,
+    height: 18,
+    decoration: const BoxDecoration(color: C.bg, shape: BoxShape.circle),
+  );
 
   Widget _btn(String label, IconData icon, bool primary, VoidCallback onTap) => Press(
-        onTap: onTap,
-        child: Container(
-          height: 52,
-          decoration: BoxDecoration(
-            color: primary ? C.red : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white, width: 1.5),
-            boxShadow: primary ? const [BoxShadow(color: Color(0xFF0A1224), offset: Offset(0, 4))] : null,
+    onTap: onTap,
+    child: Container(
+      height: 52,
+      decoration: BoxDecoration(
+        color: primary ? C.red : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: primary ? const [BoxShadow(color: Color(0xFF0A1224), offset: Offset(0, 4))] : null,
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: sans(15, w: FontWeight.w800, c: Colors.white),
           ),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, color: Colors.white, size: 18),
-            const SizedBox(width: 6),
-            Text(label, style: sans(15, w: FontWeight.w800, c: Colors.white)),
-          ]),
-        ),
-      );
+        ],
+      ),
+    ),
+  );
 }
 
 class _Blink extends StatefulWidget {
@@ -227,7 +284,11 @@ class _BlinkState extends State<_Blink> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) => FadeTransition(
-        opacity: Tween(begin: 1.0, end: .3).animate(_c),
-        child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: C.red, shape: BoxShape.circle)),
-      );
+    opacity: Tween(begin: 1.0, end: .3).animate(_c),
+    child: Container(
+      width: 8,
+      height: 8,
+      decoration: const BoxDecoration(color: C.red, shape: BoxShape.circle),
+    ),
+  );
 }

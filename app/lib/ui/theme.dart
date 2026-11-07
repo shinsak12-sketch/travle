@@ -1,5 +1,6 @@
 // 보딩패스 디자인: 색·글꼴·공용 위젯
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class C {
   static const bg = Color(0xFFE9EDF2);
@@ -25,12 +26,13 @@ TextStyle sans(double size, {FontWeight w = FontWeight.w600, Color c = C.ink, do
 
 // Space Mono에 한글이 없어서 한글은 고딕으로 대신 그림
 TextStyle mono(double size, {bool bold = false, Color c = C.ink, double ls = 0}) => TextStyle(
-    fontFamily: kMono,
-    fontFamilyFallback: const [kSans],
-    fontSize: size,
-    fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
-    color: c,
-    letterSpacing: ls);
+  fontFamily: kMono,
+  fontFamilyFallback: const [kSans],
+  fontSize: size,
+  fontWeight: bold ? FontWeight.w700 : FontWeight.w400,
+  color: c,
+  letterSpacing: ls,
+);
 
 ThemeData buildTheme() {
   final base = ThemeData(
@@ -50,13 +52,29 @@ ThemeData buildTheme() {
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       labelStyle: sans(14, c: C.muted),
       floatingLabelStyle: mono(12, c: C.ink, ls: 1),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: C.line2, width: 1.5)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: C.line2, width: 1.5)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: C.ink, width: 1.5)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: C.line2, width: 1.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: C.line2, width: 1.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: C.ink, width: 1.5),
+      ),
     ),
     bottomSheetTheme: const BottomSheetThemeData(backgroundColor: C.bg, showDragHandle: true, dragHandleColor: C.line2),
-    snackBarTheme: SnackBarThemeData(backgroundColor: C.ink, contentTextStyle: sans(14, c: Colors.white), behavior: SnackBarBehavior.floating),
-    dialogTheme: DialogThemeData(backgroundColor: C.bg, titleTextStyle: sans(18, w: FontWeight.w800)),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: C.ink,
+      contentTextStyle: sans(14, c: Colors.white),
+      behavior: SnackBarBehavior.floating,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: C.bg,
+      titleTextStyle: sans(18, w: FontWeight.w800),
+    ),
     datePickerTheme: const DatePickerThemeData(backgroundColor: C.bg),
     timePickerTheme: const TimePickerThemeData(backgroundColor: C.bg),
   );
@@ -83,14 +101,17 @@ class _PressState extends State<Press> {
       onTapDown: widget.onTap == null ? null : (_) => _set(true),
       onTapUp: (_) => _set(false),
       onTapCancel: () => _set(false),
-      onTap: widget.onTap,
+      onTap: widget.onTap == null
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              widget.onTap!();
+            },
       onLongPress: widget.onLongPress,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         curve: Curves.easeOut,
-        transform: _down
-            ? (Matrix4.translationValues(0, 2, 0)..rotateZ(widget.tilt))
-            : Matrix4.identity(),
+        transform: _down ? (Matrix4.translationValues(0, 2, 0)..rotateZ(widget.tilt)) : Matrix4.identity(),
         transformAlignment: Alignment.center,
         child: widget.child,
       ),
@@ -128,8 +149,7 @@ class PassButton extends StatefulWidget {
   final IconData? icon;
   final double height;
   final bool dashed;
-  const PassButton(this.label,
-      {super.key, this.onTap, this.primary = false, this.icon, this.height = 54, this.dashed = false});
+  const PassButton(this.label, {super.key, this.onTap, this.primary = false, this.icon, this.height = 54, this.dashed = false});
   @override
   State<PassButton> createState() => _PassButtonState();
 }
@@ -144,7 +164,12 @@ class _PassButtonState extends State<PassButton> {
       onTapDown: (_) => setState(() => _down = true),
       onTapUp: (_) => setState(() => _down = false),
       onTapCancel: () => setState(() => _down = false),
-      onTap: widget.onTap,
+      onTap: widget.onTap == null
+          ? null
+          : () {
+              HapticFeedback.lightImpact();
+              widget.onTap!();
+            },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 110),
         height: widget.height,
@@ -156,10 +181,19 @@ class _PassButtonState extends State<PassButton> {
           boxShadow: shadow > 0 ? [BoxShadow(color: C.ink, offset: Offset(0, shadow))] : null,
         ),
         alignment: Alignment.center,
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (widget.icon != null) ...[Icon(widget.icon, size: 18, color: fg), const SizedBox(width: 6)],
-          Flexible(child: Text(widget.label, style: sans(15, w: FontWeight.w800, c: fg), overflow: TextOverflow.ellipsis)),
-        ]),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.icon != null) ...[Icon(widget.icon, size: 18, color: fg), const SizedBox(width: 6)],
+            Flexible(
+              child: Text(
+                widget.label,
+                style: sans(15, w: FontWeight.w800, c: fg),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -172,9 +206,9 @@ class Dashed extends StatelessWidget {
   const Dashed({super.key, this.vertical = false, this.color = C.line});
   @override
   Widget build(BuildContext context) => CustomPaint(
-        size: vertical ? const Size(2, double.infinity) : const Size(double.infinity, 2),
-        painter: _DashPainter(vertical, color),
-      );
+    size: vertical ? const Size(2, double.infinity) : const Size(double.infinity, 2),
+    painter: _DashPainter(vertical, color),
+  );
 }
 
 class _DashPainter extends CustomPainter {
@@ -228,26 +262,41 @@ class Ticket extends StatelessWidget {
         border: border,
         boxShadow: shadow ? const [BoxShadow(color: Color(0x1F14213D), blurRadius: 14, offset: Offset(0, 6))] : null,
       ),
-      child: Stack(clipBehavior: Clip.none, children: [
-        IntrinsicHeight(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            if (stub != null) ...[
-              SizedBox(width: stubWidth, child: Center(child: stub)),
-              const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Dashed(vertical: true)),
-            ],
-            Expanded(child: Padding(padding: const EdgeInsets.fromLTRB(14, 12, 10, 12), child: body)),
-            ?trailing,
-          ]),
-        ),
-        if (stub != null) ...[
-          Positioned(left: stubWidth - 6, top: -7, child: _notch()),
-          Positioned(left: stubWidth - 6, bottom: -7, child: _notch()),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (stub != null) ...[
+                  SizedBox(
+                    width: stubWidth,
+                    child: Center(child: stub),
+                  ),
+                  const Padding(padding: EdgeInsets.symmetric(vertical: 6), child: Dashed(vertical: true)),
+                ],
+                Expanded(
+                  child: Padding(padding: const EdgeInsets.fromLTRB(14, 12, 10, 12), child: body),
+                ),
+                ?trailing,
+              ],
+            ),
+          ),
+          if (stub != null) ...[
+            Positioned(left: stubWidth - 6, top: -7, child: _notch()),
+            Positioned(left: stubWidth - 6, bottom: -7, child: _notch()),
+          ],
         ],
-      ]),
+      ),
     );
   }
 
-  Widget _notch() => Container(width: 14, height: 14, decoration: BoxDecoration(color: notch, shape: BoxShape.circle));
+  Widget _notch() => Container(
+    width: 14,
+    height: 14,
+    decoration: BoxDecoration(color: notch, shape: BoxShape.circle),
+  );
 }
 
 /// 작은 라벨 (모노, 자간 넓게)
@@ -279,8 +328,10 @@ class PassChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: selected ? selectedColor : C.line2, width: 1.5),
         ),
-        child: Text(label,
-            style: sans(13, w: selected ? FontWeight.w800 : FontWeight.w600, c: selected ? Colors.white : C.muted)),
+        child: Text(
+          label,
+          style: sans(13, w: selected ? FontWeight.w800 : FontWeight.w600, c: selected ? Colors.white : C.muted),
+        ),
       ),
     );
   }
@@ -293,13 +344,16 @@ class Stamp extends StatelessWidget {
   const Stamp(this.text, {super.key, this.size = 11});
   @override
   Widget build(BuildContext context) => Transform.rotate(
-        angle: -0.12,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-          decoration: BoxDecoration(border: Border.all(color: C.red, width: 1.5), borderRadius: BorderRadius.circular(4)),
-          child: Text(text, style: mono(size, bold: true, c: C.red, ls: 1.2)),
-        ),
-      );
+    angle: -0.12,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        border: Border.all(color: C.red, width: 1.5),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(text, style: mono(size, bold: true, c: C.red, ls: 1.2)),
+    ),
+  );
 }
 
 /// 빈 화면 안내
@@ -309,15 +363,18 @@ class EmptyNote extends StatelessWidget {
   const EmptyNote(this.title, this.body, {super.key});
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: C.line2, width: 1.5),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: sans(15, w: FontWeight.w800)),
-          const SizedBox(height: 4),
-          Text(body, style: sans(13, c: C.muted, h: 1.5)),
-        ]),
-      );
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: C.line2, width: 1.5),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: sans(15, w: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text(body, style: sans(13, c: C.muted, h: 1.5)),
+      ],
+    ),
+  );
 }

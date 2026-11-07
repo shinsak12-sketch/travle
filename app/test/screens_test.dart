@@ -60,12 +60,45 @@ Store buildStore() {
   }
 
   s.trips.add(kyoto);
-  s.addItem(kyoto, TripItem(type: ItemType.flight, title: 'KE723', time: '08:10', f: {'from': 'ICN', 'to': 'KIX', 'arrive': '10:05', 'seat': '32A', 'booking': 'QX7K2M'}, cost: 412000, currency: 'KRW'), day: 0);
-  s.addItem(kyoto, TripItem(type: ItemType.food, title: '이치란 라멘 도톤보리점', time: '19:00', f: {'menu': '돈코츠 라멘, 반숙 달걀'}, cost: 2400, currency: 'JPY'), day: 0);
+  s.addItem(
+    kyoto,
+    TripItem(
+      type: ItemType.flight,
+      title: 'KE723',
+      time: '08:10',
+      f: {'from': 'ICN', 'to': 'KIX', 'arrive': '10:05', 'seat': '32A', 'booking': 'QX7K2M'},
+      cost: 412000,
+      currency: 'KRW',
+    ),
+    day: 0,
+  );
+  s.addItem(
+    kyoto,
+    TripItem(
+      type: ItemType.food,
+      title: '이치란 라멘 도톤보리점',
+      time: '19:00',
+      f: {'menu': '돈코츠 라멘, 반숙 달걀'},
+      cost: 2400,
+      currency: 'JPY',
+    ),
+    day: 0,
+  );
   s.addItem(kyoto, pl('후시미', '09:00')..done = true, day: 1);
   s.addItem(kyoto, pl('기요미즈', '11:30'), day: 1);
   s.addItem(kyoto, TripItem(type: ItemType.shopping, title: '니시키 시장', time: '14:00', f: {'buy': '말차 과자, 츠케모노'}), day: 1);
-  s.addItem(kyoto, TripItem(type: ItemType.stay, title: '호텔 그레이서리 교토 산조', time: '15:00', f: {'checkout': '11/24 11:00', 'nights': '3', 'booking': '81726354'}, cost: 54000, currency: 'JPY'), day: 1);
+  s.addItem(
+    kyoto,
+    TripItem(
+      type: ItemType.stay,
+      title: '호텔 그레이서리 교토 산조',
+      time: '15:00',
+      f: {'checkout': '11/24 11:00', 'nights': '3', 'booking': '81726354'},
+      cost: 54000,
+      currency: 'JPY',
+    ),
+    day: 1,
+  );
   s.addItem(kyoto, TripItem(type: ItemType.memo, title: '기온 산책', time: '18:00', memo: '해 질 무렵 하나미코지, 저녁은 폰토초'), day: 1);
   kyoto.wish.add(pl('금각사', ''));
   kyoto.wish.add(pl('아라시야마', ''));
@@ -77,27 +110,36 @@ Store buildStore() {
     c.done = true;
   }
 
-  s.trips.add(Trip(
-    title: '퀸스타운·와나카',
-    start: today.add(const Duration(days: 43)),
-    legs: [Leg(destId: 'NZ-ZQN', cityKo: '퀸스타운', code: 'ZQN', nights: 6)],
-  ));
-  s.trips.add(Trip(
-    title: '다낭·호이안',
-    start: DateTime(now.year, 7, 3).isBefore(today) ? DateTime(now.year, 7, 3) : DateTime(now.year - 1, 7, 3),
-    legs: [Leg(destId: 'VN-DAD', cityKo: '다낭', code: 'DAD', nights: 4)],
-  ));
+  s.trips.add(
+    Trip(
+      title: '퀸스타운·와나카',
+      start: today.add(const Duration(days: 43)),
+      legs: [Leg(destId: 'NZ-ZQN', cityKo: '퀸스타운', code: 'ZQN', nights: 6)],
+    ),
+  );
+  s.trips.add(
+    Trip(
+      title: '다낭·호이안',
+      start: DateTime(now.year, 7, 3).isBefore(today) ? DateTime(now.year, 7, 3) : DateTime(now.year - 1, 7, 3),
+      legs: [Leg(destId: 'VN-DAD', cityKo: '다낭', code: 'DAD', nights: 4)],
+    ),
+  );
   return s;
 }
 
 Future<void> shot(WidgetTester tester, Store s, Widget page, String name, {Future<void> Function()? act}) async {
   tester.view.physicalSize = const Size(390 * 3, 844 * 3);
   tester.view.devicePixelRatio = 3;
+  // 상단 상태바·하단 내비게이션 바(3버튼) 영역을 흉내 냄
+  tester.view.padding = const FakeViewPadding(top: 24 * 3, bottom: 48 * 3);
+  tester.view.viewPadding = const FakeViewPadding(top: 24 * 3, bottom: 48 * 3);
   addTearDown(tester.view.reset);
-  await tester.pumpWidget(StoreScope(
-    store: s,
-    child: MaterialApp(debugShowCheckedModeBanner: false, theme: buildTheme(), home: page),
-  ));
+  await tester.pumpWidget(
+    StoreScope(
+      store: s,
+      child: MaterialApp(debugShowCheckedModeBanner: false, theme: buildTheme(), home: page),
+    ),
+  );
   await tester.pump(const Duration(seconds: 2));
   if (act != null) {
     await act();
@@ -105,6 +147,12 @@ Future<void> shot(WidgetTester tester, Store s, Widget page, String name, {Futur
     await tester.pump(const Duration(seconds: 2));
   }
   await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$name.png'));
+}
+
+/// 하단 버튼이 내비게이션 바(아래 48px)에 들어가지 않는지 확인
+void expectAboveNavBar(WidgetTester tester, String label) {
+  final r = tester.getRect(find.text(label).last);
+  expect(r.bottom, lessThanOrEqualTo(844 - 48), reason: '$label 버튼이 폰 하단 버튼 영역과 겹침');
 }
 
 void main() {
@@ -121,13 +169,17 @@ void main() {
     expect(catalog.searchCities('cebu').first.ko, '세부');
   });
 
-  testWidgets('홈', (t) async => shot(t, buildStore(), const HomeScreen(), '1_home'));
-
   testWidgets('일정 D1', (t) async {
     final s = buildStore();
-    await shot(t, s, TripScreen(tripId: s.trips.first.id), '2_schedule_d1', act: () async {
-      await t.tap(find.text('D1'));
-    });
+    await shot(
+      t,
+      s,
+      TripScreen(tripId: s.trips.first.id),
+      '2_schedule_d1',
+      act: () async {
+        await t.tap(find.text('D1'));
+      },
+    );
   });
 
   testWidgets('일정 D2', (t) async {
@@ -153,6 +205,44 @@ void main() {
   testWidgets('오늘', (t) async {
     final s = buildStore();
     await shot(t, s, TodayScreen(tripId: s.trips.first.id), '7_today');
+  });
+
+  testWidgets('담은 곳 시트', (t) async {
+    final s = buildStore();
+    await shot(
+      t,
+      s,
+      TripScreen(tripId: s.trips.first.id),
+      '9_wish_sheet',
+      act: () async {
+        await t.tap(find.text('담은 곳 2'));
+      },
+    );
+    expectAboveNavBar(t, '+ 직접 추가');
+  });
+
+  testWidgets('지출 추가 시트 · 금액 쉼표', (t) async {
+    final s = buildStore();
+    await shot(
+      t,
+      s,
+      TripScreen(tripId: s.trips.first.id, initialTab: 2),
+      '10_expense_sheet',
+      act: () async {
+        await t.scrollUntilVisible(find.text('+ 지출'), 300, scrollable: find.byType(Scrollable).last);
+        await t.tap(find.text('+ 지출'));
+        await t.pump(const Duration(seconds: 1));
+        await t.enterText(find.byType(TextField).at(0), '비행기');
+        await t.enterText(find.byType(TextField).at(1), '500000');
+      },
+    );
+    expect(find.text('500,000'), findsOneWidget);
+    expectAboveNavBar(t, '저장');
+  });
+
+  testWidgets('홈 하단 버튼', (t) async {
+    await shot(t, buildStore(), const HomeScreen(), '1_home');
+    expectAboveNavBar(t, '+ 새 여행');
   });
 
   testWidgets('항공편 입력', (t) async {

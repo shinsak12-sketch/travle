@@ -44,8 +44,9 @@ class Store extends ChangeNotifier {
     return (j['trips'] as List).map((e) => Trip.fromJson(e)).toList();
   }
 
-  String exportJson() => const JsonEncoder.withIndent(' ')
-      .convert({'app': 'travle', 'v': 1, 'saved': DateTime.now().toIso8601String(), 'trips': trips.map((t) => t.toJson()).toList()});
+  String exportJson() => const JsonEncoder.withIndent(
+    ' ',
+  ).convert({'app': 'travle', 'v': 1, 'saved': DateTime.now().toIso8601String(), 'trips': trips.map((t) => t.toJson()).toList()});
 
   /// 백업 파일 불러오기 (전체 교체)
   void importJson(String s) {
@@ -184,13 +185,16 @@ class Store extends ChangeNotifier {
         ..currency = item.currency
         ..date = date;
     } else {
-      t.expenses.add(Expense(
+      t.expenses.add(
+        Expense(
           title: item.title,
           category: item.type.expenseCategory,
           amount: item.cost!,
           currency: item.currency,
           date: date,
-          itemId: item.id));
+          itemId: item.id,
+        ),
+      );
     }
   }
 
@@ -211,15 +215,15 @@ class Store extends ChangeNotifier {
   }
 
   TripItem placeItem(Place p) => TripItem(
-        type: ItemType.place,
-        title: p.ko,
-        destId: p.destId,
-        cat: p.cat,
-        sub: p.sub,
-        lat: p.lat,
-        lon: p.lon,
-        f: {if (p.en.isNotEmpty) 'en': p.en, if (p.desc.isNotEmpty) 'desc': p.desc},
-      );
+    type: ItemType.place,
+    title: p.ko,
+    destId: p.destId,
+    cat: p.cat,
+    sub: p.sub,
+    lat: p.lat,
+    lon: p.lon,
+    f: {if (p.en.isNotEmpty) 'en': p.en, if (p.desc.isNotEmpty) 'desc': p.desc},
+  );
 }
 
 class StoreScope extends InheritedNotifier<Store> {

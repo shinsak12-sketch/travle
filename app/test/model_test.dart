@@ -2,15 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:travle/data/checklist_templates.dart';
 import 'package:travle/data/models.dart';
 import 'package:travle/data/store.dart';
+import 'package:flutter/services.dart';
+import 'package:travle/ui/sheet.dart';
 
 Trip sample() => Trip(
-      title: '교토·오사카',
-      start: DateTime(2026, 11, 20),
-      legs: [
-        Leg(destId: 'JP-OSA', cityKo: '오사카', code: 'OSA', nights: 2),
-        Leg(destId: 'JP-KYOTO', cityKo: '교토', code: 'KYO', nights: 2),
-      ],
-    );
+  title: '교토·오사카',
+  start: DateTime(2026, 11, 20),
+  legs: [
+    Leg(destId: 'JP-OSA', cityKo: '오사카', code: 'OSA', nights: 2),
+    Leg(destId: 'JP-KYOTO', cityKo: '교토', code: 'KYO', nights: 2),
+  ],
+);
 
 void main() {
   test('일자 수와 도시 배정', () {
@@ -118,5 +120,27 @@ void main() {
     expect(t.days[0].map((i) => i.title), ['A', 'B']);
     s.reorder(t, 0, 0, 1);
     expect(t.days[0].map((i) => i.title), ['B', 'A']);
+  });
+
+  test('금액 입력 쉼표', () {
+    const f = ThousandsFormatter();
+    TextEditingValue type(String t) => f.formatEditUpdate(
+      TextEditingValue.empty,
+      TextEditingValue(
+        text: t,
+        selection: TextSelection.collapsed(offset: t.length),
+      ),
+    );
+    expect(type('500000').text, '500,000');
+    expect(type('1234567.891').text, '1,234,567.89');
+    expect(type('9.2').text, '9.2');
+    expect(type('0012').text, '12');
+    expect(type('12,34a5').text, '12,345');
+    expect(
+      const ThousandsFormatter(decimal: false).formatEditUpdate(TextEditingValue.empty, const TextEditingValue(text: '1.5')).text,
+      '15',
+    );
+    expect(parseAmount('1,234,567.5'), 1234567.5);
+    expect(amountText(2400), '2,400');
   });
 }

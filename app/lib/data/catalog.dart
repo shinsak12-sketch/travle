@@ -91,7 +91,7 @@ class Catalog {
             desc: r[6],
             lat: (r[7] as num?)?.toDouble(),
             lon: (r[8] as num?)?.toDouble(),
-          )
+          ),
       ];
     });
     return Catalog(cats, dests, places);
@@ -101,12 +101,14 @@ class Catalog {
   List<Destination> searchCities(String q) {
     final s = q.trim().toLowerCase();
     if (s.isEmpty) return const [];
-    final hits = dests.where((d) =>
-        d.ko.contains(s) ||
-        d.en.toLowerCase().contains(s) ||
-        d.country.contains(s) ||
-        d.code.toLowerCase() == s ||
-        d.air.toLowerCase() == s);
+    final hits = dests.where(
+      (d) =>
+          d.ko.contains(s) ||
+          d.en.toLowerCase().contains(s) ||
+          d.country.contains(s) ||
+          d.code.toLowerCase() == s ||
+          d.air.toLowerCase() == s,
+    );
     final list = hits.toList()
       ..sort((a, b) {
         int score(Destination d) => d.ko.startsWith(s) || d.en.toLowerCase().startsWith(s) ? 0 : 1;
