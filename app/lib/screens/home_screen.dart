@@ -114,7 +114,11 @@ class HomeScreen extends StatelessWidget {
 
   void _open(BuildContext context, Trip t) {
     final today = t.todayIndex();
-    Navigator.push(context, slideRoute(today != null ? TodayScreen(tripId: t.id) : TripScreen(tripId: t.id)));
+    final past = t.end.isBefore(DateTime.now().subtract(const Duration(days: 1)));
+    Navigator.push(
+      context,
+      slideRoute(today != null ? TodayScreen(tripId: t.id) : TripScreen(tripId: t.id, initialTab: past ? 3 : 0)),
+    );
   }
 }
 

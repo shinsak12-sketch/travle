@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_10y.dart' as tzdata;
 import 'package:travle/data/catalog.dart';
 import 'package:travle/data/checklist_templates.dart';
 import 'package:travle/data/models.dart';
@@ -162,6 +163,7 @@ void main() {
     TestWidgetsFlutterBinding.ensureInitialized();
     await _loadFonts();
     catalog = await Catalog.load();
+    tzdata.initializeTimeZones();
   });
 
   test('내장 데이터 로드', () {
@@ -245,6 +247,35 @@ void main() {
   testWidgets('홈 하단 버튼', (t) async {
     await shot(t, buildStore(), const HomeScreen(), '1_home');
     expectAboveNavBar(t, '+ 새 여행');
+  });
+
+  testWidgets('카드를 길게 눌러 다른 날로 끌기', (t) async {
+    final s = buildStore();
+    final trip = s.trips.first;
+    late TestGesture g;
+    await shot(
+      t,
+      s,
+      TripScreen(tripId: trip.id),
+      '11_drag_to_day',
+      act: () async {
+        g = await t.startGesture(t.getCenter(find.text('니시키 시장')));
+        await t.pump(const Duration(milliseconds: 700));
+        await g.moveBy(const Offset(0, -20));
+        await t.pump();
+        await g.moveTo(t.getCenter(find.text('D4')));
+        await t.pump(const Duration(milliseconds: 300));
+      },
+    );
+    await g.up();
+    await t.pump(const Duration(seconds: 1));
+    expect(trip.days[3].any((i) => i.title == '니시키 시장'), true);
+    expect(trip.days[1].any((i) => i.title == '니시키 시장'), false);
+  });
+
+  testWidgets('기록 탭', (t) async {
+    final s = buildStore();
+    await shot(t, s, TripScreen(tripId: s.trips.first.id, initialTab: 3), '12_record');
   });
 
   testWidgets('항공편 입력', (t) async {

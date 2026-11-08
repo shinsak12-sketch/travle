@@ -65,6 +65,7 @@ class ItemCard extends StatelessWidget {
       if (item.type == ItemType.food && item.get('menu').isNotEmpty) '메뉴: ${item.get('menu')}',
       if (item.type == ItemType.food && item.get('reservation').isNotEmpty) '예약: ${item.get('reservation')}',
       if (item.type == ItemType.shopping && item.get('buy').isNotEmpty) '살 것: ${item.get('buy')}',
+      if (item.get('hours').isNotEmpty) '영업: ${item.get('hours')}',
       if (item.memo.isNotEmpty) item.memo,
       if (item.cost != null && item.cost! > 0) money(item.cost!, item.currency),
     ];

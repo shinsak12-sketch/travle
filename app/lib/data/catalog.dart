@@ -5,7 +5,7 @@ import 'dart:io' show gzip;
 import 'package:flutter/services.dart' show rootBundle;
 
 class Destination {
-  final String id, cc, country, ko, en, code, air, gateway, access;
+  final String id, cc, country, ko, en, code, air, gateway, access, tz;
   final double? lat, lon;
   final bool travelBan;
   final List<(String, int)> near; // (여행지 id, km)
@@ -19,6 +19,7 @@ class Destination {
     required this.air,
     required this.gateway,
     required this.access,
+    this.tz = '',
     required this.lat,
     required this.lon,
     required this.travelBan,
@@ -70,6 +71,7 @@ class Catalog {
         air: m['air'] ?? '',
         gateway: m['gw'] ?? '',
         access: m['access'] ?? '',
+        tz: m['tz'] ?? '',
         lat: (m['lat'] as num?)?.toDouble(),
         lon: (m['lon'] as num?)?.toDouble(),
         travelBan: m['ban'] == 1,

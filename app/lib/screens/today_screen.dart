@@ -7,6 +7,7 @@ import '../ui/item_card.dart';
 import '../ui/route.dart';
 import '../ui/theme.dart';
 import '../util/format.dart';
+import '../util/clock.dart';
 import '../util/maps.dart';
 import 'item_edit_screen.dart';
 import 'trip_screen.dart';
@@ -47,6 +48,10 @@ class TodayScreen extends StatelessWidget {
                     children: [
                       Eyebrow('TODAY · D${day + 1} · ${md(t.dateOf(day))} ${wkEn(t.dateOf(day))}'),
                       Text('${leg?.cityKo ?? ''} ${day + 1}일째', style: sans(24, w: FontWeight.w800)),
+                      LocalClock(
+                        tzName: leg == null ? '' : (store.catalog!.byId[leg.destId]?.tz ?? ''),
+                        style: mono(12, c: C.muted),
+                      ),
                     ],
                   ),
                 ),
@@ -177,7 +182,10 @@ class TodayScreen extends StatelessWidget {
   }
 
   Widget _nowPass(BuildContext context, Store store, Trip t, TripItem it, int n, String cityEn) {
-    final desc = it.get('desc').isNotEmpty ? it.get('desc') : it.memo;
+    final desc = [
+      if (it.get('desc').isNotEmpty) it.get('desc') else if (it.memo.isNotEmpty) it.memo,
+      if (it.get('hours').isNotEmpty) '영업: ${it.get('hours')}',
+    ].join('\n');
     return Container(
       decoration: BoxDecoration(
         color: C.ink,

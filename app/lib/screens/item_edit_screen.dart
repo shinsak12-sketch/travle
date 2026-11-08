@@ -71,16 +71,22 @@ const _fields = {
   ],
   ItemType.food: [
     _F('menu', '먹을 메뉴', hint: '돈코츠 라멘, 교자'),
+    _F('hours', '영업시간·휴무', hint: '10:00–20:00 · 화 휴무'),
     _F('reservation', '예약 정보', hint: '19:00 2명 · 예약자 이름'),
     _F('address', '주소', hint: '구글지도 검색에 쓰임'),
     _F('maps', '구글지도 링크 (선택)', hint: '공유로 복사한 링크'),
   ],
   ItemType.shopping: [
     _F('buy', '살 것', hint: '동전파스, 곤약젤리, 선물용 과자', multi: true),
+    _F('hours', '영업시간·휴무', hint: '10:00–20:00 · 화 휴무'),
     _F('address', '주소', hint: '구글지도 검색에 쓰임'),
     _F('maps', '구글지도 링크 (선택)', hint: '공유로 복사한 링크'),
   ],
-  ItemType.place: [_F('address', '주소', hint: '구글지도 검색에 쓰임'), _F('maps', '구글지도 링크 (선택)', hint: '공유로 복사한 링크')],
+  ItemType.place: [
+    _F('hours', '영업시간·휴무', hint: '10:00–20:00 · 화 휴무'),
+    _F('address', '주소', hint: '구글지도 검색에 쓰임'),
+    _F('maps', '구글지도 링크 (선택)', hint: '공유로 복사한 링크'),
+  ],
   ItemType.memo: <_F>[],
 };
 

@@ -4,6 +4,8 @@ import 'package:travle/data/models.dart';
 import 'package:travle/data/store.dart';
 import 'package:flutter/services.dart';
 import 'package:travle/ui/sheet.dart';
+import 'package:travle/util/clock.dart';
+import 'package:timezone/data/latest_10y.dart' as tzdata;
 
 Trip sample() => Trip(
   title: '교토·오사카',
@@ -153,5 +155,41 @@ void main() {
     final good = s.exportJson();
     s.importJson(good);
     expect(s.trips.single.title, '교토·오사카');
+  });
+
+  test('시차: 한국 기준, 서머타임 반영', () {
+    tzdata.initializeTimeZones();
+    final winter = DateTime.utc(2026, 1, 15, 3);
+    final summer = DateTime.utc(2026, 7, 15, 3);
+    expect(gapFromKorea('Asia/Tokyo', winter), '한국과 같음');
+    expect(gapFromKorea('Asia/Manila', winter), '한국보다 1시간 느림');
+    expect(gapFromKorea('Asia/Kolkata', winter), '한국보다 3시간 30분 느림');
+    expect(gapFromKorea('Europe/Paris', winter), '한국보다 8시간 느림');
+    expect(gapFromKorea('Europe/Paris', summer), '한국보다 7시간 느림');
+    expect(gapFromKorea('Pacific/Auckland', winter), '한국보다 4시간 빠름');
+    expect(gapFromKorea('', winter), isNull);
+    expect(localNow('Asia/Tokyo', winter)!.hour, 12);
+  });
+
+  test('카드 끌어 옮기기: 다른 날, 같은 날 위치, 담은 곳', () {
+    final s = Store();
+    final t = sample();
+    s.trips.add(t);
+    final a = TripItem(type: ItemType.place, title: 'A');
+    final b = TripItem(type: ItemType.place, title: 'B');
+    final c = TripItem(type: ItemType.place, title: 'C', cost: 1000);
+    for (final i in [a, b, c]) {
+      s.addItem(t, i, day: 0);
+    }
+    s.moveTo(t, c, 0, 0); // C를 A 앞으로
+    expect(t.days[0].map((i) => i.title), ['C', 'A', 'B']);
+    s.moveTo(t, c, 0, 2); // C를 B 앞으로
+    expect(t.days[0].map((i) => i.title), ['A', 'C', 'B']);
+    s.moveTo(t, c, 3, 0); // C를 D4로
+    expect(t.days[0].map((i) => i.title), ['A', 'B']);
+    expect(t.days[3].single.title, 'C');
+    expect(t.expenses.single.date, DateTime(2026, 11, 23));
+    s.moveTo(t, a, null); // A를 담은 곳으로
+    expect(t.wish.single.title, 'A');
   });
 }

@@ -8,6 +8,8 @@ import json
 import pathlib
 import re
 
+from timezonefinder import TimezoneFinder  # pip install timezonefinder
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = ROOT / 'data'
 OUT = ROOT / 'app' / 'assets' / 'data' / 'places.json.gz'
@@ -44,6 +46,13 @@ def main():
     for l in read('nearby_destinations.csv'):
         near.setdefault(l['dest_id'], []).append((int(l['distance_km']), l['nearby_dest_id']))
 
+    tf = TimezoneFinder()
+
+    def tz(d):
+        if not d['lat']:
+            return ''
+        return tf.timezone_at(lat=float(d['lat']), lng=float(d['lon'])) or ''
+
     out_dests = []
     for d in dests:
         gw = by_id.get(d['gateway_city_id']) if d['type'] == 'no_airport' else None
@@ -60,6 +69,7 @@ def main():
             'lat': round(float(d['lat']), 4) if d['lat'] else None,
             'lon': round(float(d['lon']), 4) if d['lon'] else None,
             'ban': 1 if d['travel_ban'] else 0,
+            'tz': tz(d),
             'near': [[i, k] for k, i in sorted(near.get(d['dest_id'], []))[:12]],
         })
 

@@ -1,5 +1,6 @@
-// 여행 화면: 일정 · 체크리스트 · 예산
+// 여행 화면: 일정 · 체크리스트 · 예산 · 기록
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/models.dart';
 import '../data/store.dart';
@@ -8,11 +9,13 @@ import '../ui/route.dart';
 import '../ui/sheet.dart';
 import '../ui/theme.dart';
 import '../util/format.dart';
+import '../util/clock.dart';
 import '../util/maps.dart';
 import 'budget_tab.dart';
 import 'checklist_tab.dart';
 import 'guide_screen.dart';
 import 'item_edit_screen.dart';
+import 'record_tab.dart';
 import 'today_screen.dart';
 import 'trip_edit_screen.dart';
 import 'wish_sheet.dart';
@@ -30,6 +33,7 @@ class _TripScreenState extends State<TripScreen> {
   int _day = 0;
   bool _dayInit = false;
   final _dayScroll = ScrollController();
+  TripItem? _dragging;
 
   @override
   void dispose() {
@@ -63,7 +67,7 @@ class _TripScreenState extends State<TripScreen> {
             _header(context, t),
             Padding(
               padding: const EdgeInsets.fromLTRB(18, 10, 18, 4),
-              child: _Tabs(labels: const ['일정', '체크리스트', '예산'], index: _tab, onTap: (i) => setState(() => _tab = i)),
+              child: _Tabs(labels: const ['일정', '체크', '예산', '기록'], index: _tab, onTap: (i) => setState(() => _tab = i)),
             ),
             Expanded(
               child: AnimatedSwitcher(
@@ -71,7 +75,8 @@ class _TripScreenState extends State<TripScreen> {
                 child: switch (_tab) {
                   0 => _schedule(context, store, t),
                   1 => ChecklistTab(key: const ValueKey('c'), trip: t),
-                  _ => BudgetTab(key: const ValueKey('b'), trip: t),
+                  2 => BudgetTab(key: const ValueKey('b'), trip: t),
+                  _ => RecordTab(key: const ValueKey('r'), trip: t),
                 },
               ),
             ),
@@ -168,11 +173,14 @@ class _TripScreenState extends State<TripScreen> {
   );
 
   // ---------------- 일정 ----------------
+  // 카드를 길게 눌러 끌기: 날짜 칩에 놓으면 그날로, 다른 카드에 놓으면 그 앞으로, "담은 곳"에 놓으면 되돌림
   Widget _schedule(BuildContext context, Store store, Trip t) {
     final items = t.days[_day];
     final leg = t.legOf(_day);
     final cat = store.catalog!;
-    final cityEn = leg == null ? '' : (cat.byId[leg.destId]?.en ?? '');
+    final dest = leg == null ? null : cat.byId[leg.destId];
+    final cityEn = dest?.en ?? '';
+    final dragging = _dragging != null;
     return Column(
       key: const ValueKey('s'),
       children: [
@@ -184,45 +192,47 @@ class _TripScreenState extends State<TripScreen> {
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 4),
             itemCount: t.dayCount,
             separatorBuilder: (_, _) => const SizedBox(width: 6),
-            itemBuilder: (_, i) {
-              final sel = i == _day;
-              final date = t.dateOf(i);
-              return Press(
-                onTap: () => setState(() => _day = i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: 58,
-                  margin: EdgeInsets.only(bottom: sel ? 0 : 4, top: sel ? 0 : 0),
-                  decoration: BoxDecoration(
-                    color: sel ? C.paper : Colors.transparent,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: sel ? C.ink : C.line2, width: 1.5),
-                    boxShadow: sel ? const [BoxShadow(color: C.ink, offset: Offset(0, 4))] : null,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('D${i + 1}', style: mono(14, bold: true, c: sel ? C.ink : C.muted)),
-                      Text('${two(date.day)} ${wkEn(date)}', style: mono(9.5, c: sel ? C.ink : C.faint)),
-                    ],
-                  ),
-                ),
-              );
-            },
+            itemBuilder: (_, i) => _dayChip(store, t, i),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(leg?.cityKo ?? '', style: sans(22, w: FontWeight.w800)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(mdWeek(t.dateOf(_day)), style: sans(13, c: C.muted)),
-              ),
-              Text('${items.length}곳', style: mono(12, c: C.muted)),
-            ],
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(18, 10, 18, 8),
+            child: dragging
+                ? Row(
+                    children: [
+                      const Icon(Icons.open_with_rounded, size: 18, color: C.red),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '날짜 칩·다른 카드·담은 곳에 놓기',
+                          style: sans(13.5, w: FontWeight.w800, c: C.red),
+                        ),
+                      ),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(leg?.cityKo ?? '', style: sans(22, w: FontWeight.w800)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(mdWeek(t.dateOf(_day)), style: sans(13, c: C.muted)),
+                          ),
+                          Text('${items.length}곳', style: mono(12, c: C.muted)),
+                        ],
+                      ),
+                      if (dest != null && dest.tz.isNotEmpty)
+                        LocalClock(
+                          tzName: dest.tz,
+                          style: mono(11.5, c: C.faint),
+                        ),
+                    ],
+                  ),
           ),
         ),
         Expanded(
@@ -230,36 +240,64 @@ class _TripScreenState extends State<TripScreen> {
               ? ListView(
                   padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
                   children: const [
-                    EmptyNote('이날 일정이 비어 있음', '"담은 곳"에서 꺼내 넣거나 "+ 추가"로 장소·항공편·숙소·쇼핑·맛집 카드를 넣어. 카드를 길게 눌러 끌면 순서가 바뀜.'),
+                    EmptyNote(
+                      '이날 일정이 비어 있음',
+                      '"담은 곳"에서 꺼내 넣거나 "+ 추가"로 장소·항공편·숙소·쇼핑·맛집 카드를 넣어. 카드를 길게 눌러 끌면 순서를 바꾸거나 다른 날로 옮길 수 있음.',
+                    ),
                   ],
                 )
-              : ReorderableListView.builder(
+              : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
                   itemCount: items.length,
-                  buildDefaultDragHandles: false,
-                  proxyDecorator: (child, _, _) => Material(color: Colors.transparent, child: child),
-                  onReorderItem: (a, b) => store.reorder(t, _day, a, b),
                   itemBuilder: (_, i) {
                     final it = items[i];
-                    return ReorderableDelayedDragStartListener(
+                    final card = ItemCard(
+                      item: it,
+                      number: i + 1,
+                      cats: cat.cats,
+                      onTap: () => Navigator.push(context, slideRoute(ItemEditScreen(tripId: t.id, itemId: it.id, day: _day))),
+                      onMaps: it.type == ItemType.memo || it.type == ItemType.flight ? null : () => openMaps(it, cityEn: cityEn),
+                    );
+                    return DragTarget<TripItem>(
                       key: ValueKey(it.id),
-                      index: i,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: SlideIn(
-                          index: i,
-                          child: ItemCard(
-                            item: it,
-                            number: i + 1,
-                            cats: cat.cats,
-                            onTap: () =>
-                                Navigator.push(context, slideRoute(ItemEditScreen(tripId: t.id, itemId: it.id, day: _day))),
-                            onMaps: it.type == ItemType.memo || it.type == ItemType.flight
-                                ? null
-                                : () => openMaps(it, cityEn: cityEn),
+                      onWillAcceptWithDetails: (d) => d.data != it,
+                      onAcceptWithDetails: (d) => _drop(store, t, d.data, _day, i),
+                      builder: (context, cand, _) {
+                        final over = cand.isNotEmpty;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                height: over ? 6 : 0,
+                                margin: EdgeInsets.only(bottom: over ? 8 : 0),
+                                decoration: BoxDecoration(color: C.red, borderRadius: BorderRadius.circular(3)),
+                              ),
+                              LongPressDraggable<TripItem>(
+                                data: it,
+                                hapticFeedbackOnStart: true,
+                                // 끄는 카드가 손가락 아래에 따라와서 위쪽 날짜 칩이 가려지지 않게
+                                dragAnchorStrategy: (d, ctx, pos) =>
+                                    Offset((ctx.findRenderObject() as RenderBox).globalToLocal(pos).dx, -36),
+                                onDragStarted: () => setState(() => _dragging = it),
+                                onDragEnd: (_) => setState(() => _dragging = null),
+                                onDraggableCanceled: (_, _) => setState(() => _dragging = null),
+                                feedback: Material(
+                                  color: Colors.transparent,
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context).size.width - 36,
+                                    child: Transform.rotate(angle: -0.025, child: Opacity(opacity: .92, child: card)),
+                                  ),
+                                ),
+                                childWhenDragging: Opacity(opacity: .25, child: card),
+                                child: SlideIn(index: i, child: card),
+                              ),
+                            ],
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
                 ),
@@ -270,7 +308,18 @@ class _TripScreenState extends State<TripScreen> {
             children: [
               Expanded(
                 flex: 10,
-                child: PassButton('담은 곳 ${t.wish.length}', onTap: () => showWishSheet(context, t.id, defaultDay: _day)),
+                child: DragTarget<TripItem>(
+                  onAcceptWithDetails: (d) => _drop(store, t, d.data, null),
+                  builder: (context, cand, _) => AnimatedScale(
+                    duration: const Duration(milliseconds: 150),
+                    scale: cand.isNotEmpty ? 1.06 : 1,
+                    child: PassButton(
+                      dragging ? '담은 곳으로' : '담은 곳 ${t.wish.length}',
+                      primary: cand.isNotEmpty,
+                      onTap: () => showWishSheet(context, t.id, defaultDay: _day),
+                    ),
+                  ),
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(flex: 14, child: PassButton('+ 추가', primary: true, onTap: () => _addSheet(context, t))),
@@ -279,6 +328,62 @@ class _TripScreenState extends State<TripScreen> {
         ),
       ],
     );
+  }
+
+  Widget _dayChip(Store store, Trip t, int i) {
+    final sel = i == _day;
+    final date = t.dateOf(i);
+    return DragTarget<TripItem>(
+      onWillAcceptWithDetails: (_) => true,
+      onAcceptWithDetails: (d) => _drop(store, t, d.data, i),
+      builder: (context, cand, _) {
+        final over = cand.isNotEmpty;
+        return Press(
+          onTap: () => setState(() => _day = i),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 58,
+            margin: EdgeInsets.only(bottom: sel || over ? 0 : 4),
+            transform: over ? Matrix4.diagonal3Values(1.08, 1.08, 1) : Matrix4.identity(),
+            transformAlignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: over ? C.red : (sel ? C.paper : Colors.transparent),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: over ? C.red : (sel ? C.ink : C.line2), width: 1.5),
+              boxShadow: sel || over ? const [BoxShadow(color: C.ink, offset: Offset(0, 4))] : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('D${i + 1}', style: mono(14, bold: true, c: over ? Colors.white : (sel ? C.ink : C.muted))),
+                Text('${two(date.day)} ${wkEn(date)}', style: mono(9.5, c: over ? Colors.white : (sel ? C.ink : C.faint))),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _drop(Store store, Trip t, TripItem item, int? day, [int? index]) {
+    HapticFeedback.mediumImpact();
+    final from = store.findDay(t, item);
+    store.moveTo(t, item, day, index);
+    setState(() => _dragging = null);
+    if (day != from) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(day == null ? '${item.title} → 담은 곳' : '${item.title} → D${day + 1} ${md(t.dateOf(day))}'),
+            action: SnackBarAction(
+              label: '되돌리기',
+              textColor: const Color(0xFFFF8A8C),
+              onPressed: () => store.moveTo(t, item, from),
+            ),
+          ),
+        );
+    }
   }
 
   void _addSheet(BuildContext context, Trip t) {

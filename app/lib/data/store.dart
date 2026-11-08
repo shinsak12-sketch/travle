@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:timezone/data/latest_10y.dart' as tzdata;
 
 import 'catalog.dart';
 import 'checklist_templates.dart';
@@ -18,6 +19,7 @@ class Store extends ChangeNotifier {
   Timer? _saveTimer;
 
   Future<void> init() async {
+    tzdata.initializeTimeZones();
     final results = await Future.wait([Catalog.load(), _openFile()]);
     catalog = results[0] as Catalog;
     final f = results[1] as File;
@@ -147,7 +149,12 @@ class Store extends ChangeNotifier {
   }
 
   /// day == null 이면 담은 곳으로 되돌림
-  void moveItem(Trip t, TripItem item, int? day) {
+  void moveItem(Trip t, TripItem item, int? day) => moveTo(t, item, day);
+
+  /// 카드를 다른 날(또는 담은 곳)로 옮김. index를 주면 그 카드 앞에 끼워 넣음
+  void moveTo(Trip t, TripItem item, int? day, [int? index]) {
+    final fromDay = findDay(t, item);
+    final fromIdx = fromDay == null ? -1 : t.days[fromDay].indexOf(item);
     for (final d in t.days) {
       d.remove(item);
     }
@@ -155,7 +162,10 @@ class Store extends ChangeNotifier {
     if (day == null) {
       t.wish.add(item);
     } else {
-      t.days[day].add(item);
+      final list = t.days[day];
+      var at = index ?? list.length;
+      if (fromDay == day && fromIdx >= 0 && fromIdx < at) at -= 1;
+      list.insert(at.clamp(0, list.length), item);
     }
     _syncExpense(t, item, day);
     changed();
