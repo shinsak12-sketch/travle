@@ -48,9 +48,13 @@ class Store extends ChangeNotifier {
     ' ',
   ).convert({'app': 'travle', 'v': 1, 'saved': DateTime.now().toIso8601String(), 'trips': trips.map((t) => t.toJson()).toList()});
 
-  /// 백업 파일 불러오기 (전체 교체)
+  /// 백업 파일 불러오기 (전체 교체). 끝까지 읽히는 파일일 때만 바꾸고, 아니면 예외
   void importJson(String s) {
-    trips = _decode(s);
+    final next = _decode(s);
+    for (final t in next) {
+      t.fitDays();
+    }
+    trips = next;
     changed();
   }
 

@@ -15,18 +15,16 @@ jobs:
     defaults:
       run:
         working-directory: app
-    env:
-      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+    # 서명 키 비밀값은 job 전체가 아니라 아래 서명 단계에만 넘김 (외부 액션이 못 보게)
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: 3.47.9
           channel: stable
@@ -38,8 +36,11 @@ jobs:
 
       # 저장소 Secrets에 서명 키가 있으면 고정 키로 서명 (업데이트 설치 가능), 없으면 디버그 키
       - name: Signing key
-        if: env.KEYSTORE_BASE64 != ''
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then echo "서명 키 없음: 디버그 키로 서명"; exit 0; fi
           echo "$KEYSTORE_BASE64" | base64 -d > android/app/upload.jks
           cat > android/key.properties <<PROPS
           storeFile=upload.jks
@@ -50,14 +51,18 @@ jobs:
 
       - run: flutter build apk --release --build-number $((100 + ${{ github.run_number }}))
 
+      - name: Remove signing key from runner
+        if: always()
+        run: rm -f android/app/upload.jks android/key.properties
+
       - run: cp build/app/outputs/flutter-apk/app-release.apk build/travle-${{ github.run_number }}.apk
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: travle-apk
           path: app/build/travle-${{ github.run_number }}.apk
 
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: apk-${{ github.run_number }}
           name: 트래블 앱 빌드 ${{ github.run_number }}

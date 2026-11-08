@@ -77,9 +77,15 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (ok == true) {
-      s.importJson(text);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('여행 $count개를 불러왔음')));
+      try {
+        s.importJson(text);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('여행 $count개를 불러왔음')));
+        }
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('백업 파일이 손상돼서 불러오지 못함. 지금 데이터는 그대로임')));
+        }
       }
     }
   }

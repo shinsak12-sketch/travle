@@ -143,4 +143,15 @@ void main() {
     expect(parseAmount('1,234,567.5'), 1234567.5);
     expect(amountText(2400), '2,400');
   });
+
+  test('손상된 백업은 불러오지 않고 지금 데이터 유지', () {
+    final s = Store();
+    s.trips.add(sample());
+    expect(() => s.importJson('{"trips":[{"title":"x"}]}'), throwsA(anything));
+    expect(() => s.importJson('not json'), throwsA(anything));
+    expect(s.trips.single.title, '교토·오사카');
+    final good = s.exportJson();
+    s.importJson(good);
+    expect(s.trips.single.title, '교토·오사카');
+  });
 }
