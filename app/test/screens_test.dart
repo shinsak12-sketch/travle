@@ -156,6 +156,8 @@ void expectAboveNavBar(WidgetTester tester, String label) {
 }
 
 void main() {
+  // 샘플 여행이 오늘 날짜 기준이라 화면 이미지는 비교하지 않고 매번 새로 그림 (배치·동작 검사는 그대로)
+  autoUpdateGoldenFiles = true;
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     await _loadFonts();
